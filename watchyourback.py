@@ -19,7 +19,8 @@ def step(position, direction):
 
 class Board:
     # Class representing board as a dictionary ('grid' = {(x,y): '-', ...}) &
-    # keeping track of pieces with lists ('white_pieces','black_pieces')
+    # keeping track of pieces (instance of Piece) with a similar dictionary
+    # ('white_pieces' = {(x,y): piece, ...})
     def __init__(self):
         # Initialise default size board (8x8) with empty squares, then insert 
         # corners after
@@ -30,9 +31,9 @@ class Board:
         for corner in [(0,0), (0,7), (7,0), (7,7)]:
             self.grid[corner] = CORNER
             
-        # Initialise lists holding each players pieces
-        self.white_pieces = []
-        self.black_pieces = []
+        # Initialise dictionary holding each players pieces
+        self.white_pieces = {}
+        self.black_pieces = {}
         
     def place_piece(self, colour, pos):
         # Returns true if piece placed successfully
@@ -41,10 +42,10 @@ class Board:
         if pos in self.grid:
             if self.grid[pos] == EMPTY:
                 if colour == WHITE:
-                    self.white_pieces.append(Piece(WHITE, pos, self))
+                    self.white_pieces[pos] = (Piece(WHITE, pos, self))
                     self.grid[pos] = WHITE
                 if colour == BLACK:
-                    self.black_pieces.append(Piece(BLACK, pos, self))
+                    self.black_pieces[pos] = (Piece(BLACK, pos, self))
                     self.grid[pos] = BLACK
                 return True
             
@@ -95,7 +96,8 @@ class Piece:
         return moves
     
     def check_eliminated(self):
-        # Removes piece from 'grid' and sets alive = false
+        # Returns true if eliminated and removes piece from 'grid' 
+        # and sets alive = False
         for forward, backward in [(UP, DOWN), (LEFT, RIGHT)]:
             front_square = step(self.pos, forward)
             back_square = step(self.pos, backward)
@@ -104,4 +106,36 @@ class Piece:
                 if self.board.grid[front_square] in self.enemy \
                 and self.board.grid[back_square] in self.enemy:
                     self.board.remove_piece(self.pos)
-                    self.alive = False             
+                    self.alive = False
+                    return True
+                    
+    def resurrect(self):
+        # Places piece back on board and sets alive = True
+        self.board.grid[self.pos] = self.player
+        self.alive = True
+                    
+    def make_move(self, newpos):
+        # Attempts to move piece to new position and check for eliminations.
+        # Returns eliminated pieces as a list to enable undomove()
+        oldpos = self.pos
+        self.pos = newpos   
+        self.board.grid[oldpos] = EMPTY
+        self.board.grid[newpos] = self.player
+        
+        eliminated_pieces = []
+        if self.player == WHITE:
+            enemy_pieces = self.board.black_pieces
+        else:
+            enemy_pieces = self.board.white_pieces
+            
+        # Eliminate any surrounding pieces if it is the case
+        for direction in DIRECTIONS:
+            adjacent_square = step(self.pos, direction)
+            if adjacent_square in self.board.grid:
+                if self.board.grid[adjacent_square] == self.enemy[0]:
+                    if enemy_pieces[adjacent_square].check_eliminated():
+                        eliminated_pieces.append(enemy_pieces[adjacent_square])
+                
+        # Now check if piece has itself been eliminated
+        self.check_eliminated()
+                 
