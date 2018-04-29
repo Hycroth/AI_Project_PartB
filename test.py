@@ -1,4 +1,5 @@
-from piece_module import Player, Board, Piece
+from player_module import Player, Board, Piece
 
 white = Player('white')
-white.board.print()
+white.board.place_piece(white.colour, (1,0))
+white.board.print_board()
