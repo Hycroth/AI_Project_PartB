@@ -18,8 +18,8 @@ def step(position, direction):
 # CLASSES
 
 class Board:
-    # Class representing game board as a dictionary ('grid' = {(x,y): '-', ...}) &
-    # keeping track of each players pieces in lists ('white_pieces','black_pieces')
+    # Class representing board as a dictionary ('grid' = {(x,y): '-', ...}) &
+    # keeping track of pieces with lists ('white_pieces','black_pieces')
     def __init__(self):
         # Initialise default size board (8x8) with empty squares, then insert 
         # corners after
@@ -49,6 +49,11 @@ class Board:
                 return True
             
         return False
+    
+    def remove_piece(self, pos):
+        # Remove piece from grid
+        if pos in self.grid:
+            self.grid[pos] = EMPTY
         
     def print_board(self):
         # Testing purposes only. 
@@ -58,13 +63,17 @@ class Board:
             
 class Piece:
     # Class representing each piece in terms of player (WHITE/BLACK), 
-    # pos (x,y), board (instance of Board it belongs to) and alive (whether
-    # or not it is on the board)
+    # pos (x,y), board (instance of Board it belongs to), alive (whether
+    # or not it is on the board) and its enemies (WHITE/BLACK)
     def __init__(self, player, pos, board):
         self.player = player
         self.pos = pos
         self.board = board
         self.alive = True
+        if player == WHITE:
+            self.enemy = [BLACK, CORNER]
+        else:
+            self.enemy = [WHITE, CORNER]
         
     def listmoves(self):
         # Return all available moves as a list
@@ -84,3 +93,15 @@ class Piece:
                     moves.append(jump_square)
                     
         return moves
+    
+    def check_eliminated(self):
+        # Removes piece from 'grid' and sets alive = false
+        for forward, backward in [(UP, DOWN), (LEFT, RIGHT)]:
+            front_square = step(self.pos, forward)
+            back_square = step(self.pos, backward)
+            if front_square in self.board.grid \
+            and back_square in self.board.grid:
+                if self.board.grid[front_square] in self.enemy \
+                and self.board.grid[back_square] in self.enemy:
+                    self.board.remove_piece(self.pos)
+                    self.alive = False             
