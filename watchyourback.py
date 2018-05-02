@@ -21,14 +21,18 @@ class Board:
     # Class representing board as a dictionary ('grid' = {(x,y): '-', ...}) &
     # keeping track of pieces (instance of Piece) with a similar dictionary
     # ('white_pieces' = {(x,y): piece, ...})
-    def __init__(self):
-        # Initialise default size board (8x8) with empty squares, then insert 
-        # corners after
+    def __init__(self, size):
+        # Initialise blank board with dimensions size x size then insert 
+        # corners after. Also initialise list 'playingarea' holding all tuples
+        # included in the active zone (allows us to shrink board easier)
         self.grid = {}
-        for y, row in enumerate(range(8)):
-            for x, char in enumerate(range(8)):
+        self.playingarea = []
+        self.playingsize = size
+        for y, row in enumerate(range(size)):
+            for x, char in enumerate(range(size)):
                 self.grid[x, y] = EMPTY
-        for corner in [(0,0), (0,7), (7,0), (7,7)]:
+                self.playingarea.append((x,y))
+        for corner in [(0,0), (0,size-1), (size-1,0), (size-1,size-1)]:
             self.grid[corner] = CORNER
             
         # Initialise dictionary holding each players pieces
@@ -39,7 +43,7 @@ class Board:
         # Returns true if piece placed successfully
         # colour (BLACK/WHITE), pos (x,y)
         
-        if pos in self.grid:
+        if pos in self.playingarea:
             if self.grid[pos] == EMPTY:
                 if colour == WHITE:
                     self.white_pieces[pos] = (Piece(WHITE, pos, self))
@@ -64,12 +68,47 @@ class Board:
             dictionary = self.black_pieces
             
         dictionary[newpos] = dictionary[oldpos]
-        del dictionary[oldpos]     
+        del dictionary[oldpos]
+    """   
+    def shrink(self):
+        # Shrink the play area and make any required eliminations
+        top, _ = self.playingarea[0]  # Top left corner ('X')
+        bottom = self.playingsize - 1
         
-    def print_board(self):
+        # Iterate through outside border
+        for square in range(top, playingsize):
+            for border in [top, bottom]:
+                # Top then bottom row (since borders overlap
+                # check square has not been removed already)
+                if (border, square) in self.playingarea:
+                    self.playingarea.remove((border,square))
+                    for pieces in [self.white_pieces, self.black_pieces]:
+                        if (border, square) in pieces:
+                            pieces[(border, square)].check_elim 
+                # Left then right column
+                if (square, border) in self.playingarea:
+                    self.playingarea.remove((square,border))
+        
+        # Replace existing corners with '-'
+        for corner in [(top, top), (bottom, top), (top, bottom), (bottom, bottom)]:
+            self.grid[corner] = EMPTY
+            
+        # Add new corners
+        top += 1
+        bottom -= 1
+        for corner in [(top, top), (bottom, top), (top, bottom), (bottom, bottom)]:
+            self.grid[corner] = CORNER
+            
+        # Check if any pieces eliminated by new corners (top left moving 
+        # counterclockwise)
+        
+        # Change size of playable area    
+        self.playingsize -= 2    
+    """       
+    def print_grid(self):
         # Testing purposes only. 
         # Prints out physical representation of game board 
-        size = range(8)
+        size = range(self.playingsize)
         print('\n'.join(' '.join(self.grid[x,y] for x in size) for y in size))
             
 class Piece:
@@ -92,14 +131,14 @@ class Piece:
         for dir in DIRECTIONS:
             # Try make a normal move
             adjacent_square = step(self.pos, dir)
-            if adjacent_square in self.board.grid:
+            if adjacent_square in self.board.playingarea:
                 if self.board.grid[adjacent_square] == EMPTY:
                     moves.append(adjacent_square)
                     continue # Since jump is not possible
                 
             # If not try jump to square next to adjacent square
             jump_square = step(adjacent_square, dir)
-            if jump_square in self.board.grid:
+            if jump_square in self.board.playingarea:
                 if self.board.grid[jump_square] == EMPTY:
                     moves.append(jump_square)
                     
@@ -111,8 +150,8 @@ class Piece:
         for forward, backward in [(UP, DOWN), (LEFT, RIGHT)]:
             front_square = step(self.pos, forward)
             back_square = step(self.pos, backward)
-            if front_square in self.board.grid \
-            and back_square in self.board.grid:
+            if front_square in self.board.playingarea \
+            and back_square in self.board.playingarea:
                 if self.board.grid[front_square] in self.enemy \
                 and self.board.grid[back_square] in self.enemy:
                     self.board.remove_piece(self.pos)
