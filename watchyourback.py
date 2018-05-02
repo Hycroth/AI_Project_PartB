@@ -56,6 +56,16 @@ class Board:
         if pos in self.grid:
             self.grid[pos] = EMPTY
         
+    def update_team(self, colour, newpos, oldpos):
+        # Updates the key value of a piece in its respective dictionary
+        if colour == WHITE:
+            dictionary = self.white_pieces
+        else:
+            dictionary = self.black_pieces
+            
+        dictionary[newpos] = dictionary[oldpos]
+        del dictionary[oldpos]     
+        
     def print_board(self):
         # Testing purposes only. 
         # Prints out physical representation of game board 
@@ -115,12 +125,13 @@ class Piece:
         self.alive = True
                     
     def make_move(self, newpos):
-        # Attempts to move piece to new position and check for eliminations.
+        # Moves piece to new position and check for eliminations.
         # Returns eliminated pieces as a list to enable undomove()
         oldpos = self.pos
         self.pos = newpos   
         self.board.grid[oldpos] = EMPTY
         self.board.grid[newpos] = self.player
+        self.board.update_team(self.player, newpos, oldpos)
         
         eliminated_pieces = []
         if self.player == WHITE:
@@ -137,5 +148,18 @@ class Piece:
                         eliminated_pieces.append(enemy_pieces[adjacent_square])
                 
         # Now check if piece has itself been eliminated
-        self.check_eliminated()
+        if self.check_eliminated():
+            eliminated_pieces.append(self)
+            
+        return eliminated_pieces
+        
+    def undo_move(self, oldpos, eliminated):
+        # Move piece back to 'oldpos' and resurrect 'eliminated' pieces
+        for piece in eliminated:
+            piece.resurrect()
+            
+        newpos = self.pos
+        self.pos = oldpos
+        self.board.grid[newpos] = EMPTY
+        self.board.grid[oldpos] = self.player
                  
