@@ -52,7 +52,7 @@ class Board:
                     self.grid[pos] = WHITE
                     eliminated_pieces = \
                     self.white_pieces[pos].eliminate_surrounding()
-                if colour == BLACK:
+                elif colour == BLACK:
                     self.black_pieces[pos] = (Piece(BLACK, pos, self))
                     self.grid[pos] = BLACK
                     eliminated_pieces = \
@@ -110,18 +110,24 @@ class Board:
                             pieces[(square, border)].check_eliminated()
         
         # Replace existing corners with '-'
-        for corner in [(top, top), (bottom, top), (top, bottom), (bottom, bottom)]:
+        for corner in [(top, top), (top, bottom), (bottom, bottom), (bottom, top)]:
             self.grid[corner] = EMPTY
             
-        # Add new corners
+        # Add new corners and check if any pieces eliminated as a result
+        # (moving counterclockwise starting from top left corner)
         top += 1
         bottom -= 1
-        for corner in [(top, top), (bottom, top), (top, bottom), (bottom, bottom)]:
+        for corner in [(top, top), (top, bottom), (bottom, bottom), (bottom, top)]:
             self.grid[corner] = CORNER
-            
-        # Check if any pieces eliminated by new corners (top left moving 
-        # counterclockwise)
-        
+            for dir in DIRECTIONS:
+                adjacent_square = step(corner, dir)
+                if adjacent_square in self.playingarea:
+                    if adjacent_square in self.white_pieces:
+                        self.white_pieces[adjacent_square].check_eliminated()
+                    elif adjacent_square in self.black_pieces:
+                        self.black_pieces[adjacent_square].check_eliminated()
+                    
+                
         # Change size of playable area    
         self.playingsize -= 2    
            
