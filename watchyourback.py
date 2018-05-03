@@ -41,20 +41,36 @@ class Board:
         self.black_pieces = {}
         
     def place_piece(self, colour, pos):
-        # Returns true if piece placed successfully
-        # colour (BLACK/WHITE), pos (x,y)
+        # Returns eliminated pieces (can be empty) if piece placed 
+        # successfully (to be used for undo_place), else return None
+        eliminated_pieces = []
         
         if pos in self.playingarea:
             if self.grid[pos] == EMPTY:
                 if colour == WHITE:
                     self.white_pieces[pos] = (Piece(WHITE, pos, self))
                     self.grid[pos] = WHITE
+                    eliminated_pieces = \
+                    self.white_pieces[pos].eliminate_surrounding()
                 if colour == BLACK:
                     self.black_pieces[pos] = (Piece(BLACK, pos, self))
                     self.grid[pos] = BLACK
-                return True
+                    eliminated_pieces = \
+                    self.black_pieces[pos].eliminate_surrounding()    
+                return eliminated_pieces
             
-        return False
+        return None
+    
+    def undo_place(self, colour, pos, eliminated):
+        # Undo the most recent placing move by specified player
+        for piece in eliminated:
+            piece.resurrect()
+            
+        self.remove_piece(pos)    
+        if colour == WHITE:
+            del self.white_pieces[pos]
+        else:
+            del self.black_pieces[pos]
     
     def remove_piece(self, pos):
         # Remove piece from grid
@@ -90,8 +106,8 @@ class Board:
                 if (square, border) in self.playingarea:
                     self.playingarea.remove((square,border))
                     for pieces in [self.white_pieces, self.black_pieces]:
-                        if (border, square) in pieces:
-                            pieces[(border, square)].check_eliminated()
+                        if (square, border) in pieces:
+                            pieces[(square, border)].check_eliminated()
         
         # Replace existing corners with '-'
         for corner in [(top, top), (bottom, top), (top, bottom), (bottom, bottom)]:
@@ -154,6 +170,8 @@ class Piece:
         
         # Check if piece is outside of playing area
         if self.pos not in self.board.playingarea:
+            self.board.remove_piece(self.pos)
+            self.alive = False
             return True
         
         # Check if piece has been surrounded horizontally or vertically
@@ -172,6 +190,30 @@ class Piece:
         # Places piece back on board and sets alive = True
         self.board.grid[self.pos] = self.player
         self.alive = True
+        
+    def eliminate_surrounding(self):
+        # Checks if any adjacent pieces need to be eliminated and return them
+        # in a list. Only use after moving or placing a piece
+        eliminated_pieces = []
+        
+        if self.player == WHITE:
+            enemy_pieces = self.board.black_pieces
+        else:
+            enemy_pieces = self.board.white_pieces
+            
+        # Eliminate any surrounding pieces if it is the case
+        for dir in DIRECTIONS:
+            adjacent_square = step(self.pos, dir)
+            if adjacent_square in self.board.playingarea:
+                if self.board.grid[adjacent_square] == self.enemy[0]:
+                    if enemy_pieces[adjacent_square].check_eliminated():
+                        eliminated_pieces.append(enemy_pieces[adjacent_square])
+                        
+        # Now check if piece has itself been eliminated
+        if self.check_eliminated():
+            eliminated_pieces.append(self)
+                        
+        return eliminated_pieces
                     
     def make_move(self, newpos):
         # Moves piece to new position and check for eliminations.
@@ -182,23 +224,7 @@ class Piece:
         self.board.grid[newpos] = self.player
         self.board.update_team(self.player, newpos, oldpos)
         
-        eliminated_pieces = []
-        if self.player == WHITE:
-            enemy_pieces = self.board.black_pieces
-        else:
-            enemy_pieces = self.board.white_pieces
-            
-        # Eliminate any surrounding pieces if it is the case
-        for direction in DIRECTIONS:
-            adjacent_square = step(self.pos, direction)
-            if adjacent_square in self.board.grid:
-                if self.board.grid[adjacent_square] == self.enemy[0]:
-                    if enemy_pieces[adjacent_square].check_eliminated():
-                        eliminated_pieces.append(enemy_pieces[adjacent_square])
-                
-        # Now check if piece has itself been eliminated
-        if self.check_eliminated():
-            eliminated_pieces.append(self)
+        eliminated_pieces = self.eliminate_surrounding()
             
         return eliminated_pieces
         
