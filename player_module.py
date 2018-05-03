@@ -20,6 +20,7 @@ class Player:
         # Placing phase
         
         # Moving phase
+        
         return next_action
     
     ## Update game board with opponents move

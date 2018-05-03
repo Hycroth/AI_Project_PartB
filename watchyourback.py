@@ -26,6 +26,7 @@ class Board:
         # corners after. Also initialise list 'playingarea' holding all tuples
         # included in the active zone (allows us to shrink board easier)
         self.grid = {}
+        self.size = size
         self.playingarea = []
         self.playingsize = size
         for y, row in enumerate(range(size)):
@@ -69,14 +70,14 @@ class Board:
             
         dictionary[newpos] = dictionary[oldpos]
         del dictionary[oldpos]
-    """   
+       
     def shrink(self):
         # Shrink the play area and make any required eliminations
         top, _ = self.playingarea[0]  # Top left corner ('X')
         bottom = self.playingsize - 1
         
         # Iterate through outside border
-        for square in range(top, playingsize):
+        for square in range(top, self.playingsize):
             for border in [top, bottom]:
                 # Top then bottom row (since borders overlap
                 # check square has not been removed already)
@@ -84,10 +85,13 @@ class Board:
                     self.playingarea.remove((border,square))
                     for pieces in [self.white_pieces, self.black_pieces]:
                         if (border, square) in pieces:
-                            pieces[(border, square)].check_elim 
+                            pieces[(border, square)].check_eliminated() 
                 # Left then right column
                 if (square, border) in self.playingarea:
                     self.playingarea.remove((square,border))
+                    for pieces in [self.white_pieces, self.black_pieces]:
+                        if (border, square) in pieces:
+                            pieces[(border, square)].check_eliminated()
         
         # Replace existing corners with '-'
         for corner in [(top, top), (bottom, top), (top, bottom), (bottom, bottom)]:
@@ -104,11 +108,11 @@ class Board:
         
         # Change size of playable area    
         self.playingsize -= 2    
-    """       
+           
     def print_grid(self):
         # Testing purposes only. 
         # Prints out physical representation of game board 
-        size = range(self.playingsize)
+        size = range(self.size)
         print('\n'.join(' '.join(self.grid[x,y] for x in size) for y in size))
             
 class Piece:
@@ -147,6 +151,12 @@ class Piece:
     def check_eliminated(self):
         # Returns true if eliminated and removes piece from 'grid' 
         # and sets alive = False
+        
+        # Check if piece is outside of playing area
+        if self.pos not in self.board.playingarea:
+            return True
+        
+        # Check if piece has been surrounded horizontally or vertically
         for forward, backward in [(UP, DOWN), (LEFT, RIGHT)]:
             front_square = step(self.pos, forward)
             back_square = step(self.pos, backward)
