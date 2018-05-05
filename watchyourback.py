@@ -59,10 +59,17 @@ class Board:
         return zone
     
     def get_piece(self, pos):
-        # Returns piece at given position
-        for piece in self.white_pieces + self.black_pieces:
-            if piece.alive and piece.pos == pos:
-                return piece
+        # Returns piece at given position, with assumption it's alive
+        
+        # Is piece white?
+        if pos in self.white_pieces:
+            piece = self.white_pieces[pos]
+        
+        # Piece must be black    
+        else:
+            piece = self.black_pieces[pos]
+            
+        return piece
     
     def get_alive(self, colour):
         # Return dictionary containing pieces that are currently alive
