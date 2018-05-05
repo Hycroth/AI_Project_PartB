@@ -19,7 +19,7 @@ class Player:
             self.enemy = WHITE
         self.board = Board(DEFAULT_BOARD_SIZE)
         
-    ## Returns next move
+    # Returns next move
     def action(self, turns):
         next_action = None  # default value if no moves available
         
@@ -56,7 +56,7 @@ class Player:
         
         return next_action
     
-    ## Update game board with opponents move
+    # Update game board with opponents move
     def update(self, action):
         
         # Action specifies a placing move
