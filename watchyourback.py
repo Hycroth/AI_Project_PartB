@@ -2,6 +2,9 @@
 # Authors: Ckyever Gaviola, Samuel Fatone
 # Note: Some ideas have been borrowed from the sample-solution
 
+# TODO: Fix shrink function - it shrinks the board too small second time around
+# After a move the piece gets converted to the other teams colour in the grid representation
+
 # CONSTANTS
 WHITE, BLACK, CORNER, EMPTY = ['O','@','X','-']
 DIRECTIONS = UP, DOWN, LEFT, RIGHT = (0, -1), (0, 1), (-1, 0), (1, 0)
@@ -59,7 +62,7 @@ class Board:
         return zone
     
     def get_piece(self, pos):
-        # Returns piece at given position, with assumption it's alive
+        # Returns an alive piece at the given position
         
         # Is piece white?
         if pos in self.white_pieces:
