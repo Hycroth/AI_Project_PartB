@@ -5,6 +5,7 @@
 # CONSTANTS
 WHITE, BLACK, CORNER, EMPTY = ['O','@','X','-']
 DIRECTIONS = UP, DOWN, LEFT, RIGHT = (0, -1), (0, 1), (-1, 0), (1, 0)
+WHITE_ZONE, BLACK_ZONE = range(6), range(2, 8)  # Assuming size of board is default (8)
 WIN, TIE, LOSS, CONTINUE = [3,2,1,0]
 
 # HELPER FUNCTIONS
@@ -40,6 +41,22 @@ class Board:
         # Initialise dictionary holding each players pieces
         self.white_pieces = {}
         self.black_pieces = {}
+        
+    def starting_zone(self, colour):
+        # Returns a list which represents all tuples in selected teams zone
+        # during the placing phase
+        zone = []
+        
+        for x, y in self.playingarea:
+            if (x, y) not in [(0,0), (0,7), (7,0), (7,7)]:
+                if colour == WHITE:
+                    if y in WHITE_ZONE:
+                        zone.append((x, y))
+                else:
+                    if y in BLACK_ZONE:
+                        zone.append((x, y))
+    
+        return zone  
         
     def place_piece(self, colour, pos):
         # Returns eliminated pieces (can be empty) if piece placed 
