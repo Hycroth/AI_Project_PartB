@@ -164,6 +164,9 @@ class Board:
         top += 1
         bottom -= 1
         for corner in [(top, top), (top, bottom), (bottom, bottom), (bottom, top)]:
+            # If corner replaces a piece make sure to eliminate it
+            if corner in {**self.white_pieces, **self.black_pieces}:
+                self.get_piece(corner).alive = False
             self.grid[corner] = CORNER
             for dir in DIRECTIONS:
                 adjacent_square = step(corner, dir)
