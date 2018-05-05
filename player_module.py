@@ -6,7 +6,7 @@ import random
 
 DEFAULT_BOARD_SIZE = 8
 MOVING_PHASE = 24
-SHRINK = [128, 129, 192, 193]
+SHRINK = [127, 128, 191, 192]
 WHITE, BLACK = ['O', '@']
 PLACING, MOVING = ['placing', 'moving']
 
@@ -23,10 +23,6 @@ class Player:
         
     # Returns next move
     def action(self, turns):
-        print("My board")
-        self.board.print_grid()
-        print("====================")
-        
         next_action = None  # default value if no moves available
         
         # Check if board has shrunk
@@ -50,8 +46,13 @@ class Player:
             # then randomly select one of those moves
             while True:
                 team = list(self.board.get_alive(self.colour).values())
+                
+                # In the case board shrink eliminates all of our team
+                if not team:
+                    break
+                
+                # Choose random piece and a random move
                 piece = random.choice(team)
-                # All moves listed are valid
                 moves = piece.listmoves()
                 
                 # Check piece has moves available, then make move
@@ -66,6 +67,9 @@ class Player:
         self.phase == PLACING:
             self.phase = MOVING
         
+        print(self.colour + " board")
+        self.board.print_grid()
+        print("====================")
         return next_action
     
     # Update game board with opponents move
