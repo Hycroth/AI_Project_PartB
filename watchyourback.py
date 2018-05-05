@@ -56,7 +56,22 @@ class Board:
                     if y in BLACK_ZONE:
                         zone.append((x, y))
     
-        return zone  
+        return zone
+    
+    def get_alive(self, colour):
+        # Return dictionary containing pieces that are currently alive
+        dictionary = {}
+        
+        if colour == WHITE:
+            for key, piece in self.white_pieces.items():
+                if piece.alive == True:
+                    dictionary[key] = piece
+        else:
+            for key, piece in self.black_pieces.items():
+                if piece.alive == True:
+                    dictionary[key] = piece
+                    
+        return dictionary   
         
     def place_piece(self, colour, pos):
         # Returns eliminated pieces (can be empty) if piece placed 
@@ -148,13 +163,6 @@ class Board:
                 
         # Change size of playable area    
         self.playingsize -= 2    
-           
-    def pieces_remaining(self, colour):
-        # Returns the number of pieces reamining for a specificed team
-        if colour == WHITE:
-            return len(self.white_pieces)
-        else:
-            return len(self.black_pieces)
     
     def check_win(self, colour):
         # Returns the constant indicating the current result of the board
@@ -279,6 +287,7 @@ class Piece:
     def make_move(self, newpos):
         # Moves piece to new position and check for eliminations.
         # Returns eliminated pieces as a list to enable undomove()
+        # Assumes given position is valid
         oldpos = self.pos
         self.pos = newpos   
         self.board.grid[oldpos] = EMPTY
