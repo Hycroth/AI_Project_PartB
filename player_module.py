@@ -6,8 +6,9 @@ import random
 
 DEFAULT_BOARD_SIZE = 8
 MOVING_PHASE = 24
-SHRINK = [152, 216]
+SHRINK = [128, 192]
 WHITE, BLACK = ['O', '@']
+PLACING, MOVING = ['placing', 'moving']
 
 class Player:
     def __init__(self, colour):
@@ -18,6 +19,7 @@ class Player:
             self.colour = BLACK
             self.enemy = WHITE
         self.board = Board(DEFAULT_BOARD_SIZE)
+        self.phase = PLACING
         
     # Returns next move
     def action(self, turns):
@@ -28,7 +30,8 @@ class Player:
             self.board.shrink()
             
         # Placing phase
-        if turns <= MOVING_PHASE:
+        if self.phase == PLACING:
+            print(turns)
             start_zone = self.board.starting_zone(self.colour)
             
             # Keep trying to place a piece randomly until successful
@@ -39,31 +42,39 @@ class Player:
                     break
         
         # Moving phase
-        else: 
+        elif self.phase == MOVING: 
             # Keep randomly choosing a piece until one has available moves
             # then randomly select one of those moves
             while True:
-                piece = random.choice(self.board.get_alive(self.colour))
+                team = list(self.board.get_alive(self.colour).values())
+                piece = random.choice(team)
+                print(piece.pos)
                 # All moves listed are valid
                 moves = piece.listmoves()
+                print(moves)
                 
                 # Check piece has moves available, then make move
                 if moves:
                     newpos = random.choice(moves)
-                    piece.make_move(newpos)
                     next_action = (piece.pos, newpos)
+                    piece.make_move(newpos)
                     break
+        
+        # Check if this was our last turn in placing phase
+        if (turns == MOVING_PHASE-2 or turns == MOVING_PHASE-1) and \
+        self.phase == PLACING:
+            self.phase = MOVING
         
         return next_action
     
     # Update game board with opponents move
     def update(self, action):
         
-        # Action specifies a placing move
-        if len(action) == 1:
+        # First element of action has length 1, indicating it is a placing move
+        if isinstance(action[0], int):
             self.board.place_piece(self.enemy, action)
         
-        # Action has nested tuples indicating a move    
+        # Otherwise must be a nested tuples indicating a move    
         else:
             oldpos, newpos = action
             piece = self.board.get_piece(oldpos)
