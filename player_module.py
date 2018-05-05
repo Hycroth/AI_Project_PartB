@@ -7,13 +7,16 @@ import random
 DEFAULT_BOARD_SIZE = 8
 MOVING_PHASE = 24
 SHRINK = [152, 216]
+WHITE, BLACK = ['O', '@']
 
 class Player:
     def __init__(self, colour):
         if colour == 'white':
-            self.colour = 'O'
+            self.colour = WHITE
+            self.enemy = BLACK
         if colour == 'black':
-            self.colour = '@'
+            self.colour = BLACK
+            self.enemy = WHITE
         self.board = Board(DEFAULT_BOARD_SIZE)
         
     ## Returns next move
@@ -56,4 +59,13 @@ class Player:
     ## Update game board with opponents move
     def update(self, action):
         
-        return
+        # Action specifies a placing move
+        if len(action) == 1:
+            self.board.place_piece(self.enemy, action)
+        
+        # Action has nested tuples indicating a move    
+        else:
+            oldpos, newpos = action
+            piece = self.board.get_piece(oldpos)
+            piece.make_move(newpos)
+            
