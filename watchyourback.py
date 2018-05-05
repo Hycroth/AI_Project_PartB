@@ -5,6 +5,7 @@
 # CONSTANTS
 WHITE, BLACK, CORNER, EMPTY = ['O','@','X','-']
 DIRECTIONS = UP, DOWN, LEFT, RIGHT = (0, -1), (0, 1), (-1, 0), (1, 0)
+WIN, TIE, LOSS, CONTINUE = [3,2,1,0]
 
 # HELPER FUNCTIONS
 
@@ -131,6 +132,43 @@ class Board:
         # Change size of playable area    
         self.playingsize -= 2    
            
+    def pieces_remaining(self, colour):
+        # Returns the number of pieces reamining for a specificed team
+        if colour == WHITE:
+            return len(self.white_pieces)
+        else:
+            return len(self.black_pieces)
+    
+    def check_win(self, colour):
+        # Returns the constant indicating the current result of the board
+        # for the specified team
+        white = 0
+        black = 0
+        
+        # Count the number of alive pieces in each team
+        for key, piece in self.white_pieces.items():
+            if piece.alive == True:
+                white += 1
+        for key, piece in self.black_pieces.items():
+            if piece.alive == True:
+                black += 1
+        
+        # Check win conditions
+        if white >= 2 and black < 2:
+            if colour == WHITE:
+                return WIN
+            else:
+                return LOSS
+        elif white < 2 and black < 2:
+                return TIE
+        elif black >= 2 and white < 2:
+            if colour == BLACK:
+                return  WIN
+            else:
+                return LOSS
+        else:
+            return CONTINUE
+    
     def print_grid(self):
         # Testing purposes only. 
         # Prints out physical representation of game board 
