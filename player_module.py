@@ -69,6 +69,8 @@ class Player:
         
         print("====================\n" + self.colour + "'s board")
         self.board.print_grid()
+        print("White:" + str(self.board.get_alive('O').keys()))
+        print("Black:" + str(self.board.get_alive('@').keys()))
         print("====================\nReferee's board")
         return next_action
     
