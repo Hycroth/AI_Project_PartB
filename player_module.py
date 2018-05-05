@@ -2,8 +2,11 @@
 # Authors: Ckyever Gaviola, Samuel Fatone
 
 from watchyourback import Board, Piece
+import random
 
 DEFAULT_BOARD_SIZE = 8
+MOVING_PHASE = 24
+SHRINK = [152, 216]
 
 class Player:
     def __init__(self, colour):
@@ -15,11 +18,38 @@ class Player:
         
     ## Returns next move
     def action(self, turns):
-        # Check if board shrinks
+        next_action = None  # default value if no moves available
         
+        # Check if board shrinks
+        if turns in SHRINK:
+            self.board.shrink()
+            
         # Placing phase
+        if turns <= MOVING_PHASE:
+            start_zone = self.board.starting_zone(self.colour)
+            
+            # Keep trying to place a piece randomly until successful
+            # Will always be a valid action during placing phase
+            while True:
+                next_action = random.choice(start_zone)
+                if (self.board.place_piece(self.colour, next_action) != None):
+                    break
         
         # Moving phase
+        else: 
+            # Keep randomly choosing a piece until one has available moves
+            # then randomly select one of those moves
+            while True:
+                piece = random.choice(self.board.get_alive(self.colour))
+                # All moves listed are valid
+                moves = piece.listmoves()
+                
+                # Check piece has moves available, then make move
+                if moves:
+                    newpos = random.choice(moves)
+                    piece.make_move(newpos)
+                    next_action = (piece.pos, newpos)
+                    break
         
         return next_action
     
