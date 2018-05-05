@@ -67,9 +67,9 @@ class Player:
         self.phase == PLACING:
             self.phase = MOVING
         
-        print(self.colour + " board")
+        print("====================\n" + self.colour + "'s board")
         self.board.print_grid()
-        print("====================")
+        print("====================\nReferee's board")
         return next_action
     
     # Update game board with opponents move
