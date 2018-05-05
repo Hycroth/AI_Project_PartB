@@ -6,7 +6,7 @@ import random
 
 DEFAULT_BOARD_SIZE = 8
 MOVING_PHASE = 24
-SHRINK = [128, 192]
+SHRINK = [128, 129, 192, 193]
 WHITE, BLACK = ['O', '@']
 PLACING, MOVING = ['placing', 'moving']
 
@@ -23,15 +23,18 @@ class Player:
         
     # Returns next move
     def action(self, turns):
+        print("My board")
+        self.board.print_grid()
+        print("====================")
+        
         next_action = None  # default value if no moves available
         
-        # Check if board shrinks
+        # Check if board has shrunk
         if turns in SHRINK:
             self.board.shrink()
             
         # Placing phase
         if self.phase == PLACING:
-            print(turns)
             start_zone = self.board.starting_zone(self.colour)
             
             # Keep trying to place a piece randomly until successful
@@ -48,10 +51,8 @@ class Player:
             while True:
                 team = list(self.board.get_alive(self.colour).values())
                 piece = random.choice(team)
-                print(piece.pos)
                 # All moves listed are valid
                 moves = piece.listmoves()
-                print(moves)
                 
                 # Check piece has moves available, then make move
                 if moves:
