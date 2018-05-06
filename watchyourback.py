@@ -176,9 +176,9 @@ class Board:
             for dir in DIRECTIONS:
                 adjacent_square = step(corner, dir)
                 if adjacent_square in self.playingarea:
-                    if adjacent_square in self.white_pieces:
+                    if adjacent_square in self.get_alive(WHITE):
                         self.white_pieces[adjacent_square].check_eliminated()
-                    elif adjacent_square in self.black_pieces:
+                    elif adjacent_square in self.get_alive(BLACK):
                         self.black_pieces[adjacent_square].check_eliminated()
                     
                 
