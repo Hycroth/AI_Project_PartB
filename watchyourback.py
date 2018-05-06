@@ -34,6 +34,7 @@ class Board:
         self.size = size
         self.playingarea = []
         self.playingsize = size
+        self.numOfShrinks = 0
         for y, row in enumerate(range(size)):
             for x, char in enumerate(range(size)):
                 self.grid[x, y] = EMPTY
@@ -138,14 +139,13 @@ class Board:
        
     def shrink(self):
         # Shrink the play area and make any required eliminations
-        top, _ = self.playingarea[0]  # Top left corner ('X')
-        bottom = self.playingsize - 1
+        # Can only be called twice
+        s = self.numOfShrinks
         
-        # Iterate through outside border
-        for square in range(top, self.playingsize):
-            for border in [top, bottom]:
-                # Top then bottom row (since borders overlap
-                # check square has not been removed already)
+        # Iterate through outside borders
+        for square in range(s, 8 - s):
+            for border in [s, 7 - s]:
+                # Top then bottom row
                 if (border, square) in self.playingarea:
                     self.playingarea.remove((border,square))
                     for pieces in [self.white_pieces, self.black_pieces]:
@@ -159,17 +159,19 @@ class Board:
                             pieces[(square, border)].check_eliminated()
         
         # Replace existing corners with '-'
-        for corner in [(top, top), (top, bottom), (bottom, bottom), (bottom, top)]:
+        for corner in [(s, s), (s, 7-s), (7-s, 7-s), (7-s, s)]:
             self.grid[corner] = EMPTY
             
         # Add new corners and check if any pieces eliminated as a result
         # (moving counterclockwise starting from top left corner)
-        top += 1
-        bottom -= 1
-        for corner in [(top, top), (top, bottom), (bottom, bottom), (bottom, top)]:
+        self.numOfShrinks = s = s + 1 
+        
+        for corner in [(s, s), (s, 7-s), (7-s, 7-s), (7-s, s)]:
             # If corner replaces a piece make sure to eliminate it
             if corner in {**self.get_alive(WHITE), **self.get_alive(BLACK)}:
                 self.get_piece(corner).alive = False
+                
+            # Check eliminations surrounding new corner
             self.grid[corner] = CORNER
             for dir in DIRECTIONS:
                 adjacent_square = step(corner, dir)
@@ -181,7 +183,7 @@ class Board:
                     
                 
         # Change size of playable area    
-        self.playingsize -= 2    
+        self.playingsize -= 2   
     
     def check_win(self, colour):
         # Returns the constant indicating the current result of the board
