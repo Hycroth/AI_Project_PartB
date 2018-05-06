@@ -6,7 +6,7 @@ import random
 
 DEFAULT_BOARD_SIZE = 8
 MOVING_PHASE = 24
-SHRINK = [128, 129, 192, 193]
+SHRINK = [128, 192]
 WHITE, BLACK = ['O', '@']
 PLACING, MOVING = ['placing', 'moving']
 
@@ -20,10 +20,12 @@ class Player:
             self.enemy = WHITE
         self.board = Board(DEFAULT_BOARD_SIZE)
         self.phase = PLACING
+        self.turns = 0
         
     # Returns next move
     def action(self, turns):
         next_action = None  # default value if no moves available
+        self.turns = turns # allow us to know when to shrink in update function
         
         # Check if board has shrunk
         if turns in SHRINK:
@@ -67,16 +69,21 @@ class Player:
         self.phase == PLACING:
             self.phase = MOVING
         
+        # Output testing
         #print("====================\n" + self.colour + "'s board")
         #self.board.print_grid()
         #print("White:" + str(self.board.get_alive('O').keys()))
         #print("Black:" + str(self.board.get_alive('@').keys()))
-        #print("Playing Area:" + str(self.board.playingarea))
         #print("====================\nReferee's board")
+        
+        self.turns += 1
         return next_action
     
     # Update game board with opponents move
     def update(self, action):
+        # Check if board has shrunk
+        if self.turns in SHRINK:
+            self.board.shrink()
         
         # First element of action has length 1, indicating it is a placing move
         if isinstance(action[0], int):
