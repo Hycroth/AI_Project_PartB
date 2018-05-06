@@ -3,7 +3,7 @@
 # Note: Some ideas have been borrowed from the sample-solution
 
 # TODO: Fix shrink function - it shrinks the board too small second time around
-# After a move the piece gets converted to the other teams colour in the grid representation
+# After a move piece's position doesn't get updated in enemy_pieces dictionary but it gets moved on board.grid with the opposite colour
 
 # CONSTANTS
 WHITE, BLACK, CORNER, EMPTY = ['O','@','X','-']
@@ -65,11 +65,11 @@ class Board:
         # Returns an alive piece at the given position
         
         # Is piece white?
-        if pos in self.white_pieces:
+        if pos in self.white_pieces and self.white_pieces[pos].alive == True:
             piece = self.white_pieces[pos]
         
-        # Piece must be black    
-        else:
+        # Is piece black?    
+        if pos in self.black_pieces and self.black_pieces[pos].alive == True:
             piece = self.black_pieces[pos]
             
         return piece
@@ -168,7 +168,7 @@ class Board:
         bottom -= 1
         for corner in [(top, top), (top, bottom), (bottom, bottom), (bottom, top)]:
             # If corner replaces a piece make sure to eliminate it
-            if corner in {**self.white_pieces, **self.black_pieces}:
+            if corner in {**self.get_alive(WHITE), **self.get_alive(BLACK)}:
                 self.get_piece(corner).alive = False
             self.grid[corner] = CORNER
             for dir in DIRECTIONS:
