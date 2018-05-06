@@ -6,7 +6,7 @@ import random
 
 DEFAULT_BOARD_SIZE = 8
 MOVING_PHASE = 24
-SHRINK = [127, 128, 191, 192]
+SHRINK = [128, 129, 192, 193]
 WHITE, BLACK = ['O', '@']
 PLACING, MOVING = ['placing', 'moving']
 
@@ -67,11 +67,12 @@ class Player:
         self.phase == PLACING:
             self.phase = MOVING
         
-        print("====================\n" + self.colour + "'s board")
-        self.board.print_grid()
-        print("White:" + str(self.board.get_alive('O').keys()))
-        print("Black:" + str(self.board.get_alive('@').keys()))
-        print("====================\nReferee's board")
+        #print("====================\n" + self.colour + "'s board")
+        #self.board.print_grid()
+        #print("White:" + str(self.board.get_alive('O').keys()))
+        #print("Black:" + str(self.board.get_alive('@').keys()))
+        #print("Playing Area:" + str(self.board.playingarea))
+        #print("====================\nReferee's board")
         return next_action
     
     # Update game board with opponents move
