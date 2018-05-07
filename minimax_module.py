@@ -1,5 +1,6 @@
 # Player module for COMP30024: Artificial Intelligence, 2018
 # Authors: Ckyever Gaviola, Samuel Fatone
+# Strategy: Use evaluation function with minimax and alpha-beta pruning
 
 from watchyourback import Board, Piece
 import random
@@ -9,15 +10,25 @@ MOVING_PHASE = 24
 SHRINK = [128, 192]
 WHITE, BLACK = ['O', '@']
 PLACING, MOVING = ['placing', 'moving']
+WIN, TIE, LOSS, CONTINUE = [3,2,1,0]
+MIDDLE_SQUARES = [(3,3), (4,3), (3,4), (4,4)]
+
+# HELPER FUNCTION
+def manhattan_distance(a, b):
+    ax, ay = a
+    bx, by = b
+    return abs(ay - by) + abs(ax - bx)
 
 class Player:
     def __init__(self, colour):
         if colour == 'white':
             self.colour = WHITE
             self.enemy = BLACK
+            self.team = self.board.white_pieces
         if colour == 'black':
             self.colour = BLACK
             self.enemy = WHITE
+            self.team = self.board.black_pieces
         self.board = Board(DEFAULT_BOARD_SIZE)
         self.phase = PLACING
         self.turns = 0
@@ -95,3 +106,35 @@ class Player:
             piece = self.board.get_piece(oldpos)
             piece.make_move(newpos)
             
+    # Evaluation function that returns the utility value for the current 
+    # board state
+    
+    def evaluate_board(self):
+        value = 0.0
+        
+        # First check win conditions
+        result = self.board.check_win(self.colour)
+        if result == WIN:
+            return 1000
+        elif result == LOSS:
+            return -1000
+        # Should only take a draw if other moves lead to a very low value
+        elif result == TIE:
+            return -100 
+        
+        # Compare number of our pieces to number of enemy pieces
+        # Give more value to our pieces (defensive strategy)
+        value += self.board.get_alive(self.colour) * 20.0
+        value += self.board.get_alive(self.enemy) * -20.0
+        
+        # How good is our positioning (closer to middle 4 squares is favoured)
+        for piece in self.team:
+            # Return distance of middle square it is closest to
+            dfm = distance_from_middle = []
+            for square in MIDDLE_SQUARES:
+                dfm.append(manhattan_distance(piece.pos, sqaure))
+            distance = min(dfm)
+            # Penalise board state the further a piece is from middle 4
+            value += distance * -1.0
+            
+        return value
