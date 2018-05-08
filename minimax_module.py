@@ -3,8 +3,7 @@
 # Strategy: Use evaluation function with minimax and alpha-beta pruning
 
 from watchyourback import Board, Piece
-import random, math
-from _ast import Or
+import random, math, copy
 
 DEFAULT_BOARD_SIZE = 8
 MOVING_PHASE = 24
@@ -88,7 +87,9 @@ class Player:
         #self.board.print_grid()
         #print("White:" + str(self.board.get_alive('O').keys()))
         #print("Black:" + str(self.board.get_alive('@').keys()))
-        print("Value of board = " + str(self.evaluate_board()))
+        print("Value of board = " + str(self.evaluate_board(self.board)))
+        print("Minimax value = " + 
+              str(self.minimax_value(self.board, self.colour, 1)))
         #print("====================\nReferee's board")
         
         self.turns += 1
@@ -111,13 +112,13 @@ class Player:
             piece.make_move(newpos)
                     
     # Evaluation function that returns the utility value for a given 
-    # board state for the selected player
-    def evaluate_board(self):
+    # board state for this player
+    def evaluate_board(self, board):
         value = 0.0
         
         # First check win conditions if we are in moving phase
         if self.phase == MOVING:
-            result = self.board.check_win(self.colour)
+            result = board.check_win(self.colour)
             if result == WIN:
                 return math.inf
             elif result == LOSS:
@@ -128,11 +129,11 @@ class Player:
         
         # Compare number of our pieces to number of enemy pieces
         # Give more value to our pieces (defensive strategy)
-        value += len(self.board.get_alive(self.colour)) * 20.0
-        value += len(self.board.get_alive(self.enemy)) * -20.0
+        value += len(board.get_alive(self.colour)) * 20.0
+        value += len(board.get_alive(self.enemy)) * -20.0
         
         # How good is our positioning (closer to middle 4 squares is favoured)
-        for piece in self.board.get_alive(self.colour).values():
+        for piece in board.get_alive(self.colour).values():
             # Return distance of middle square it is closest to
             dfm = distance_from_middle = []
             for square in MIDDLE_SQUARES:
@@ -143,28 +144,50 @@ class Player:
             value += distance * -0.5
             
         return value
-    
-    # Returns the move with the highest minimax value, with depth cutoff
-    def minimax_value(self, state, max, min):
-        # Check if we've reached terminal
-        if (state.board.check_win(WHITE) != CONTINUE or
-            state.board.check_win(BLACK) != CONTINUE):
-            return self.evaluate_board()
+
+    # Returns minimax value for the given board state recursively
+    # Player indicates whose turn it is & depth gives us a search cutoff
+    def minimax_value(self, board, player, depth):
         
-        # Dictionary where key is the move and value is minimax value
-        # {((a,b),(c,d): inf, ... } 
-        values = {}
+        # Check if we've reached terminal state or depth limit
+        if (board.check_win(self.colour) != CONTINUE or depth == 0):
+            return self.evaluate_board(board)
         
-        # Iterate through all of our living pieces
-        for piece in state.board.get_alive(self.colour).values():
-            moves = piece.listmoves()
-            oldpos = piece.pos
-            # Iterate through each of their available moves
-            for move in moves:
-                eliminated = piece.make_move(move)
-                v = self.evaluate_board()
-                values[(oldpos, move)] = v
-                piece.undo_move(oldpos, eliminated)
+        # MAX's turn
+        if (player == self.colour):
+            return max(self.minimax_successors(board, self.colour, depth-1))
+        
+        # Must be MIN's turn
+        else:
+            return max(self.minimax_successors(board, self.enemy, depth-1))
                 
-    
+    def minimax_successors(self, board, player, depth):
+        # Gets minimax values for all possible board states in player's turn
+        values = []
+              
+        if (self.phase == PLACING):
+            zone = board.starting_zone(player)
+            
+            # Iterate through all squares in starting zone
+            for square in zone:
+                # Check piece is not already on square
+                if board.get_piece(square) == None:
+                    eliminated = board.place_piece(player, square)
+                    values.append(self.minimax_value(board, player, depth))
+                    board.undo_place(player, square, eliminated)
+            
+        elif (self.phase == MOVING):
+            # Iterate through all of player's living pieces
+            for piece in board.get_alive(player).values():
+                moves = piece.listmoves()
+                oldpos = piece.pos
+                    
+                # Make all possible moves for piece, append its minimax_value
+                # then undo the move
+                for move in moves:
+                    eliminated = piece.make_move(move)
+                    values.append(self.minimax_value(board, player, depth))
+                    piece.undo_move(oldpos, eliminated)
+                    
+        return values
     
