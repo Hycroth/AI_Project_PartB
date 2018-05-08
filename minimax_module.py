@@ -3,7 +3,8 @@
 # Strategy: Use evaluation function with minimax and alpha-beta pruning
 
 from watchyourback import Board, Piece
-import random
+import random, math
+from _ast import Or
 
 DEFAULT_BOARD_SIZE = 8
 MOVING_PHASE = 24
@@ -19,19 +20,21 @@ def manhattan_distance(a, b):
     bx, by = b
     return abs(ay - by) + abs(ax - bx)
 
+# CLASSES
+
+# Class representing our Watch Your Back AI
 class Player:
     def __init__(self, colour):
-        if colour == 'white':
-            self.colour = WHITE
-            self.enemy = BLACK
-            self.team = self.board.white_pieces
-        if colour == 'black':
-            self.colour = BLACK
-            self.enemy = WHITE
-            self.team = self.board.black_pieces
         self.board = Board(DEFAULT_BOARD_SIZE)
         self.phase = PLACING
         self.turns = 0
+        
+        if colour == 'white':
+            self.colour = WHITE
+            self.enemy = BLACK
+        if colour == 'black':
+            self.colour = BLACK
+            self.enemy = WHITE
         
     # Returns next move
     def action(self, turns):
@@ -85,6 +88,7 @@ class Player:
         #self.board.print_grid()
         #print("White:" + str(self.board.get_alive('O').keys()))
         #print("Black:" + str(self.board.get_alive('@').keys()))
+        print("Value of board = " + str(self.evaluate_board()))
         #print("====================\nReferee's board")
         
         self.turns += 1
@@ -105,36 +109,62 @@ class Player:
             oldpos, newpos = action
             piece = self.board.get_piece(oldpos)
             piece.make_move(newpos)
-            
-    # Evaluation function that returns the utility value for the current 
-    # board state
-    
+                    
+    # Evaluation function that returns the utility value for a given 
+    # board state for the selected player
     def evaluate_board(self):
         value = 0.0
         
-        # First check win conditions
-        result = self.board.check_win(self.colour)
-        if result == WIN:
-            return 1000
-        elif result == LOSS:
-            return -1000
-        # Should only take a draw if other moves lead to a very low value
-        elif result == TIE:
-            return -100 
+        # First check win conditions if we are in moving phase
+        if self.phase == MOVING:
+            result = self.board.check_win(self.colour)
+            if result == WIN:
+                return math.inf
+            elif result == LOSS:
+                return -math.inf
+            # Should only take a draw if other moves lead to a very low value
+            elif result == TIE:
+                return -100 
         
         # Compare number of our pieces to number of enemy pieces
         # Give more value to our pieces (defensive strategy)
-        value += self.board.get_alive(self.colour) * 20.0
-        value += self.board.get_alive(self.enemy) * -20.0
+        value += len(self.board.get_alive(self.colour)) * 20.0
+        value += len(self.board.get_alive(self.enemy)) * -20.0
         
         # How good is our positioning (closer to middle 4 squares is favoured)
-        for piece in self.team:
+        for piece in self.board.get_alive(self.colour).values():
             # Return distance of middle square it is closest to
             dfm = distance_from_middle = []
             for square in MIDDLE_SQUARES:
-                dfm.append(manhattan_distance(piece.pos, sqaure))
+                dfm.append(manhattan_distance(piece.pos, square))
             distance = min(dfm)
-            # Penalise board state the further a piece is from middle 4
-            value += distance * -1.0
+            # Penalise board state more the further our pieces are from 
+            # middle 4 squares
+            value += distance * -0.5
             
         return value
+    
+    # Returns the move with the highest minimax value, with depth cutoff
+    def minimax_value(self, state, max, min):
+        # Check if we've reached terminal
+        if (state.board.check_win(WHITE) != CONTINUE or
+            state.board.check_win(BLACK) != CONTINUE):
+            return self.evaluate_board()
+        
+        # Dictionary where key is the move and value is minimax value
+        # {((a,b),(c,d): inf, ... } 
+        values = {}
+        
+        # Iterate through all of our living pieces
+        for piece in state.board.get_alive(self.colour).values():
+            moves = piece.listmoves()
+            oldpos = piece.pos
+            # Iterate through each of their available moves
+            for move in moves:
+                eliminated = piece.make_move(move)
+                v = self.evaluate_board()
+                values[(oldpos, move)] = v
+                piece.undo_move(oldpos, eliminated)
+                
+    
+    
