@@ -87,7 +87,7 @@ class Player:
         #self.board.print_grid()
         #print("White:" + str(self.board.get_alive('O').keys()))
         #print("Black:" + str(self.board.get_alive('@').keys()))
-        print("Value of board = " + str(self.evaluate_board(self.board)))
+        #print("Value of board = " + str(self.evaluate_board(self.board)))
         print("Minimax value = " + 
               str(self.minimax_value(self.board, self.colour, 1)))
         #print("====================\nReferee's board")
@@ -149,7 +149,7 @@ class Player:
     # Player indicates whose turn it is & depth gives us a search cutoff
     def minimax_value(self, board, player, depth):
         
-        # Check if we've reached terminal state or depth limit
+        # Check if we've reached terminal state or depth limit (base case)
         if (board.check_win(self.colour) != CONTINUE or depth == 0):
             return self.evaluate_board(board)
         
@@ -159,7 +159,7 @@ class Player:
         
         # Must be MIN's turn
         else:
-            return max(self.minimax_successors(board, self.enemy, depth-1))
+            return min(self.minimax_successors(board, self.enemy, depth-1))
                 
     def minimax_successors(self, board, player, depth):
         # Gets minimax values for all possible board states in player's turn
@@ -167,16 +167,18 @@ class Player:
               
         if (self.phase == PLACING):
             zone = board.starting_zone(player)
-            
+            print("\nPlacing: ", end='')
             # Iterate through all squares in starting zone
             for square in zone:
                 # Check piece is not already on square
                 if board.get_piece(square) == None:
                     eliminated = board.place_piece(player, square)
+                    print(str(square), end='')
                     values.append(self.minimax_value(board, player, depth))
                     board.undo_place(player, square, eliminated)
             
         elif (self.phase == MOVING):
+            print("\nMoving: ", end='')
             # Iterate through all of player's living pieces
             for piece in board.get_alive(player).values():
                 moves = piece.listmoves()
@@ -185,6 +187,7 @@ class Player:
                 # Make all possible moves for piece, append its minimax_value
                 # then undo the move
                 for move in moves:
+                    print(str(piece.pos) + "->" + str(move), end='')
                     eliminated = piece.make_move(move)
                     values.append(self.minimax_value(board, player, depth))
                     piece.undo_move(oldpos, eliminated)
