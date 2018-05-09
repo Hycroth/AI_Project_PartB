@@ -87,7 +87,7 @@ class Player:
         #self.board.print_grid()
         #print("White:" + str(self.board.get_alive('O').keys()))
         #print("Black:" + str(self.board.get_alive('@').keys()))
-        print("Value of board = " + str(self.evaluate_board(self.board)))
+        print("Value of board for white = " + str(self.evaluate_board(self.board)))
         #print("====================\nReferee's board")
         
         self.turns += 1
@@ -188,9 +188,9 @@ class Player:
         for pos in self.board.starting_zone(self.colour):
             # Check square isn't already taken
             if self.board.get_piece(pos) == None:
-                # Find minimax value of move up to 3 ply
+                # Find minimax value
                 eliminated = self.board.place_piece(self.colour, pos)
-                values[pos] = self.max_value(self.board, self.colour, 3,
+                values[pos] = self.max_value(self.board, self.colour, 2,
                                               -math.inf, math.inf)
                 self.board.undo_place(self.colour, pos, eliminated)
         
@@ -224,7 +224,7 @@ class Player:
         for pos in self.board.starting_zone(player):
             if self.board.get_piece(pos) == None:
                 eliminated = self.board.place_piece(player, pos)
-                b = min(b, self.min_value(board, player, depth-1, a, b))
+                b = min(b, self.max_value(board, player, depth-1, a, b))
                 self.board.undo_place(player, pos, eliminated)
                 if b <= a:
                     return a
