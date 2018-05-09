@@ -89,7 +89,7 @@ class Player:
         #print("Black:" + str(self.board.get_alive('@').keys()))
         #print("Value of board = " + str(self.evaluate_board(self.board)))
         print("Minimax value = " + 
-              str(self.minimax_value(self.board, self.colour, 1)))
+              str(self.minimax_value(self.board, self.colour, 2)))
         #print("====================\nReferee's board")
         
         self.turns += 1
@@ -167,18 +167,15 @@ class Player:
               
         if (self.phase == PLACING):
             zone = board.starting_zone(player)
-            print("\nPlacing: ", end='')
             # Iterate through all squares in starting zone
             for square in zone:
                 # Check piece is not already on square
                 if board.get_piece(square) == None:
                     eliminated = board.place_piece(player, square)
-                    print(str(square), end='')
                     values.append(self.minimax_value(board, player, depth))
                     board.undo_place(player, square, eliminated)
             
         elif (self.phase == MOVING):
-            print("\nMoving: ", end='')
             # Iterate through all of player's living pieces
             for piece in board.get_alive(player).values():
                 moves = piece.listmoves()
@@ -187,9 +184,9 @@ class Player:
                 # Make all possible moves for piece, append its minimax_value
                 # then undo the move
                 for move in moves:
-                    print(str(piece.pos) + "->" + str(move), end='')
                     eliminated = piece.make_move(move)
                     values.append(self.minimax_value(board, player, depth))
+                    print(str(board.get_alive(player).keys()))
                     piece.undo_move(oldpos, eliminated)
                     
         return values
