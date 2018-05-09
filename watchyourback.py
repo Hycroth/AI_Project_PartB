@@ -91,6 +91,25 @@ class Board:
                     
         return dictionary   
         
+    def get_border_pieces(self, colour):
+        # Return dictionary containing pieces that are currently alive
+        dictionary = {}
+        
+        s = self.numOfShrinks
+        
+        if colour == WHITE:
+            for key, piece in self.white_pieces.items():
+                if piece.alive == True:
+                    if key[0]==s or key[0]==7-s or key[1]==s or key[1]==7-s:
+                        dictionary[key] = piece
+        else:
+            for key, piece in self.black_pieces.items():
+                if piece.alive == True:
+                    if key[0]==s or key[0]==7-s or key[1]==s or key[1]==7-s:
+                        dictionary[key] = piece
+                    
+        return dictionary
+        
     def place_piece(self, colour, pos):
         # Returns eliminated pieces (can be empty) if piece placed 
         # successfully (to be used for undo_place), else return None
@@ -140,6 +159,17 @@ class Board:
         dictionary[newpos] = dictionary[oldpos]
         del dictionary[oldpos]
        
+    def count_outside(self, colour):
+        count = 0
+        
+        s = self.numOfShrinks
+        for i in range(s, 8-s):
+            for j in range(s, 8-s):
+                if ((i==s or i==7-s or j==s or j==7-s) and self.grid[i, j] == colour):
+                    count += 1
+        
+        return count
+                    
     def shrink(self):
         # Shrink the play area and make any required eliminations
         # Can only be called twice
@@ -332,4 +362,3 @@ class Piece:
         self.board.grid[newpos] = EMPTY
         self.board.grid[oldpos] = self.player
         self.board.update_team(self.player, oldpos, newpos)
-                 
