@@ -47,7 +47,12 @@ class Player:
             # Keep randomly choosing a piece until one has available moves
             # then randomly select one of those moves
             while True:
-                team = list(self.board.get_alive(self.colour).values())
+                if self.board.count_outside(self.colour) >= (SHRINK[0] - self.turns)/2 and self.turns < SHRINK[0]:
+                    team = list(self.board.get_border_pieces(self.colour).values())
+                elif self.board.count_outside(self.colour) >= (SHRINK[1] - self.turns)/2 and self.turns < SHRINK[1]:
+                    team = list(self.board.get_border_pieces(self.colour).values())
+                else:
+                    team = list(self.board.get_alive(self.colour).values())
                 
                 # In the case board shrink eliminates all of our team
                 if not team:
@@ -68,13 +73,6 @@ class Player:
         if (turns == MOVING_PHASE-2 or turns == MOVING_PHASE-1) and \
         self.phase == PLACING:
             self.phase = MOVING
-        
-        # Output testing
-        #print("====================\n" + self.colour + "'s board")
-        #self.board.print_grid()
-        #print("White:" + str(self.board.get_alive('O').keys()))
-        #print("Black:" + str(self.board.get_alive('@').keys()))
-        #print("====================\nReferee's board")
         
         self.turns += 1
         return next_action
