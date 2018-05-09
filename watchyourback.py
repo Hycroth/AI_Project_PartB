@@ -119,9 +119,11 @@ class Board:
             
         self.remove_piece(pos)    
         if colour == WHITE:
-            del self.white_pieces[pos]
+            if pos in self.white_pieces:
+                del self.white_pieces[pos]
         else:
-            del self.black_pieces[pos]
+            if pos in self.black_pieces:
+                del self.black_pieces[pos]
     
     def remove_piece(self, pos):
         # Remove piece from grid
