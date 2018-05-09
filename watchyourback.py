@@ -63,7 +63,8 @@ class Board:
         return zone
     
     def get_piece(self, pos):
-        # Returns an alive piece at the given position
+        # Returns an alive piece at the given position, if no piece return None
+        piece = None
         
         # Is piece white?
         if pos in self.white_pieces and self.white_pieces[pos].alive == True:
@@ -118,9 +119,11 @@ class Board:
             
         self.remove_piece(pos)    
         if colour == WHITE:
-            del self.white_pieces[pos]
+            if pos in self.white_pieces:
+                del self.white_pieces[pos]
         else:
-            del self.black_pieces[pos]
+            if pos in self.black_pieces:
+                del self.black_pieces[pos]
     
     def remove_piece(self, pos):
         # Remove piece from grid
@@ -328,4 +331,5 @@ class Piece:
         self.pos = oldpos
         self.board.grid[newpos] = EMPTY
         self.board.grid[oldpos] = self.player
+        self.board.update_team(self.player, oldpos, newpos)
                  
