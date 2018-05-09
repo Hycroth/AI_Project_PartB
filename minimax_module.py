@@ -12,6 +12,7 @@ WHITE, BLACK = ['O', '@']
 PLACING, MOVING = ['placing', 'moving']
 WIN, TIE, LOSS, CONTINUE = [3,2,1,0]
 MIDDLE_SQUARES = [(3,3), (4,3), (3,4), (4,4)]
+SEARCH_DEPTH = 2
 
 # HELPER FUNCTION
 def manhattan_distance(a, b):
@@ -87,7 +88,7 @@ class Player:
         #self.board.print_grid()
         #print("White:" + str(self.board.get_alive('O').keys()))
         #print("Black:" + str(self.board.get_alive('@').keys()))
-        print("Value of board for white = " + str(self.evaluate_board(self.board)))
+        #print("Value of board = " + str(self.evaluate_board(self.board)))
         #print("====================\nReferee's board")
         
         self.turns += 1
@@ -190,8 +191,8 @@ class Player:
             if self.board.get_piece(pos) == None:
                 # Find minimax value
                 eliminated = self.board.place_piece(self.colour, pos)
-                values[pos] = self.max_value(self.board, self.colour, 2,
-                                              -math.inf, math.inf)
+                values[pos] = self.max_value(self.board, self.colour, 
+                                             SEARCH_DEPTH, -math.inf, math.inf)
                 self.board.undo_place(self.colour, pos, eliminated)
         
         return max(values, key=values.get)
