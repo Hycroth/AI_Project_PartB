@@ -46,14 +46,9 @@ class Player:
             
         # Placing phase
         if self.phase == PLACING:
-            start_zone = self.board.starting_zone(self.colour)
             
-            # Keep trying to place a piece randomly until successful
-            # Will always be a valid action during placing phase
-            while True:
-                next_action = random.choice(start_zone)
-                if (self.board.place_piece(self.colour, next_action) != None):
-                    break
+            next_action = self.minimax_decision(2)
+            self.board.place_piece(self.colour, next_action)
         
         # Moving phase
         elif self.phase == MOVING: 
@@ -145,6 +140,20 @@ class Player:
             
         return value
 
+    # Using minimax algorithm returns either a place (x,y) or
+    # move ((a,b),(c,d))
+    def minimax_decision(self, depth):
+        values = {}  # {place/move: minimax_value}
+        
+        if self.phase == PLACING:
+            zone = self.board.starting_zone(self.colour)
+            for square in zone:
+                if self.board.get_piece(square) == None:
+                    values[square] = self.minimax_value(self.board, self.colour, depth)
+                
+        return max(values, key=values.get)
+                
+
     # Returns minimax value for the given board state recursively
     # Player indicates whose turn it is & depth gives us a search cutoff
     def minimax_value(self, board, player, depth):
@@ -154,15 +163,15 @@ class Player:
             return self.evaluate_board(board)
         
         # MAX's turn
-        if (player == self.colour):
+        elif (player == self.colour):
             return max(self.minimax_successors(board, self.colour, depth-1))
         
         # Must be MIN's turn
         else:
             return min(self.minimax_successors(board, self.enemy, depth-1))
                 
+    # Gets minimax values for all possible board states in player's turn            
     def minimax_successors(self, board, player, depth):
-        # Gets minimax values for all possible board states in player's turn
         values = []
               
         if (self.phase == PLACING):
@@ -186,8 +195,8 @@ class Player:
                 for move in moves:
                     eliminated = piece.make_move(move)
                     values.append(self.minimax_value(board, player, depth))
-                    print(str(board.get_alive(player).keys()))
                     piece.undo_move(oldpos, eliminated)
-                    
+        
+        print(values)            
         return values
     
