@@ -46,7 +46,13 @@ class Player:
             
         # Placing phase
         if self.phase == PLACING:
-            next_action = self.minimax_decision()
+            
+            # Using minimax
+            #next_action = self.minimax_decision()
+            #self.board.place_piece(self.colour, next_action)
+            
+            # Using minimax with alpha-beta pruning
+            next_action = self.alpha_beta_search()
             self.board.place_piece(self.colour, next_action)
         
         # Moving phase
@@ -173,3 +179,54 @@ class Player:
         # MIN's (opponent) turn
         elif player == self.enemy:
             return min(values)
+            
+    # Minimax but with alpha-beta pruning
+    def alpha_beta_search(self):
+        values = {} # Key - move, Value - Minimax value
+        
+        # Iterate through all possible placing moves for current board state
+        for pos in self.board.starting_zone(self.colour):
+            # Check square isn't already taken
+            if self.board.get_piece(pos) == None:
+                # Find minimax value of move up to 3 ply
+                eliminated = self.board.place_piece(self.colour, pos)
+                values[pos] = self.max_value(self.board, self.colour, 3,
+                                              -math.inf, math.inf)
+                self.board.undo_place(self.colour, pos, eliminated)
+        
+        return max(values, key=values.get)
+        
+    
+    # The following two functions are for Alpha-beta pruning
+    def max_value(self, board, player, depth, a, b):
+        # Cutoff test
+        if self.board.check_win(self.colour) != CONTINUE or depth == 0:
+            return self.evaluate_board(board)
+        
+        values = []
+        for pos in self.board.starting_zone(player):
+            if self.board.get_piece(pos) == None:
+                eliminated = self.board.place_piece(player, pos)
+                a = max(a, self.min_value(board, player, depth-1, a, b))
+                self.board.undo_place(player, pos, eliminated)
+                if a >= b:
+                    return b
+                
+        return a
+    
+    # The following two functions are for Alpha-beta pruning
+    def min_value(self, board, player, depth, a, b):
+        # Cutoff test
+        if self.board.check_win(self.colour) != CONTINUE or depth == 0:
+            return self.evaluate_board(board)
+        
+        values = []
+        for pos in self.board.starting_zone(player):
+            if self.board.get_piece(pos) == None:
+                eliminated = self.board.place_piece(player, pos)
+                b = min(b, self.min_value(board, player, depth-1, a, b))
+                self.board.undo_place(player, pos, eliminated)
+                if b <= a:
+                    return a
+                
+        return b
