@@ -89,7 +89,7 @@ class Player:
         #print("Black:" + str(self.board.get_alive('@').keys()))
         #print("Value of board = " + str(self.evaluate_board(self.board)))
         print("Minimax value = " + 
-              str(self.minimax_value(self.board, self.colour, 2)))
+              str(self.minimax_value(self.board, self.colour, 1)))
         #print("====================\nReferee's board")
         
         self.turns += 1
@@ -130,7 +130,7 @@ class Player:
         # Compare number of our pieces to number of enemy pieces
         # Give more value to our pieces (defensive strategy)
         value += len(board.get_alive(self.colour)) * 20.0
-        value += len(board.get_alive(self.enemy)) * -20.0
+        value += len(board.get_alive(self.enemy)) * -10.0
         
         # How good is our positioning (closer to middle 4 squares is favoured)
         for piece in board.get_alive(self.colour).values():
