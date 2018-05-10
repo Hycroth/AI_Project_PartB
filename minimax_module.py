@@ -58,25 +58,9 @@ class Player:
         
         # Moving phase
         elif self.phase == MOVING: 
-            # Keep randomly choosing a piece until one has available moves
-            # then randomly select one of those moves
-            while True:
-                team = list(self.board.get_alive(self.colour).values())
-                
-                # In the case board shrink eliminates all of our team
-                if not team:
-                    break
-                
-                # Choose random piece and a random move
-                piece = random.choice(team)
-                moves = piece.listmoves()
-                
-                # Check piece has moves available, then make move
-                if moves:
-                    newpos = random.choice(moves)
-                    next_action = (piece.pos, newpos)
-                    piece.make_move(newpos)
-                    break
+            next_action = self.alpha_beta_move()
+            oldpos, newpos = next_action
+            self.board.get_piece(oldpos).make_move(newpos)
         
         # Check if this was our last turn in placing phase
         if (turns == MOVING_PHASE-2 or turns == MOVING_PHASE-1) and \
@@ -84,8 +68,8 @@ class Player:
             self.phase = MOVING
         
         # Output testing
-        #print("====================\n" + self.colour + "'s board")
-        #self.board.print_grid()
+        print("====================\n" + self.colour + "'s board")
+        self.board.print_grid()
         #print("White:" + str(self.board.get_alive('O').keys()))
         #print("Black:" + str(self.board.get_alive('@').keys()))
         #print("Value of board = " + str(self.evaluate_board(self.board)))
@@ -140,7 +124,7 @@ class Player:
             distance = min(dfm)
             # Penalise board state more the further our pieces are from 
             # middle 4 squares
-            value += distance * -0.5
+            value += distance * -1.0
             
         return value
     
@@ -181,7 +165,7 @@ class Player:
         elif player == self.enemy:
             return min(values)
             
-    # Minimax but with alpha-beta pruning
+    # Minimax but with alpha-beta pruning (for placing phase)
     def alpha_beta_search(self):
         values = {} # Key - move, Value - Minimax value
         
@@ -196,7 +180,6 @@ class Player:
                 self.board.undo_place(self.colour, pos, eliminated)
         
         return max(values, key=values.get)
-        
     
     # The following two functions are for Alpha-beta pruning
     def max_value(self, board, player, depth, a, b):
@@ -206,10 +189,10 @@ class Player:
         
         values = []
         for pos in self.board.starting_zone(player):
-            if self.board.get_piece(pos) == None:
-                eliminated = self.board.place_piece(player, pos)
+            if board.get_piece(pos) == None:
+                eliminated = board.place_piece(player, pos)
                 a = max(a, self.min_value(board, player, depth-1, a, b))
-                self.board.undo_place(player, pos, eliminated)
+                board.undo_place(player, pos, eliminated)
                 if a >= b:
                     return b
                 
@@ -218,15 +201,67 @@ class Player:
     # The following two functions are for Alpha-beta pruning
     def min_value(self, board, player, depth, a, b):
         # Cutoff test
-        if self.board.check_win(self.colour) != CONTINUE or depth == 0:
+        if (self.turns + (SEARCH_DEPTH-depth)) >= MOVING_PHASE or depth == 0:
             return self.evaluate_board(board)
         
         values = []
         for pos in self.board.starting_zone(player):
-            if self.board.get_piece(pos) == None:
-                eliminated = self.board.place_piece(player, pos)
+            if board.get_piece(pos) == None:
+                eliminated = board.place_piece(player, pos)
                 b = min(b, self.max_value(board, player, depth-1, a, b))
-                self.board.undo_place(player, pos, eliminated)
+                board.undo_place(player, pos, eliminated)
+                if b <= a:
+                    return a
+                
+        return b
+    
+    # Minimax but with alpha-beta pruning (for moving phase)
+    def alpha_beta_move(self):
+        values = {} # Key - move, Value - Minimax value
+        
+        # Iterate through each of our pieces
+        for piece in self.board.get_alive(self.colour).values():
+            # Iterate through each move for piece
+            for move in piece.listmoves():
+                oldpos = piece.pos
+                eliminated = piece.make_move(move)
+                values[oldpos, move] = self.max_value_move(self.board, self.colour,
+                                                   0, -math.inf, math.inf)
+                piece.undo_move(oldpos, eliminated) 
+        
+        return max(values, key=values.get)
+    
+    # The following two functions are for Alpha-beta pruning
+    def max_value_move(self, board, player, depth, a, b):
+        # Cutoff test
+        if self.board.check_win(self.colour) != CONTINUE or depth == 0:
+            return self.evaluate_board(board)
+        
+        values = []
+        for piece in board.get_alive(player).values():
+            for move in piece.listmoves():
+                oldpos = piece.pos
+                eliminated = piece.make_move(move)
+                a = max(a, self.min_value_move(board, player, depth-1, a, b))
+                piece.undo_move(oldpos, eliminated)
+                if a >= b:
+                    return b
+                
+        return a
+    
+    # The following two functions are for Alpha-beta pruning
+    def min_value_move(self, board, player, depth, a, b):
+        # Cutoff test
+        if self.board.check_win(self.colour) != CONTINUE or depth == 0:
+            return self.evaluate_board(board)
+        
+        values = []
+        for piece in board.get_alive(player).values():
+            for move in piece.listmoves():
+                oldpos = piece.pos
+                eliminated = piece.make_move(move)
+                b = min(b, self.max_value_move(board, player, depth-1, a, b))
+                piece.undo_move(oldpos, eliminated)
                 if b <= a:
                     return a
                 
