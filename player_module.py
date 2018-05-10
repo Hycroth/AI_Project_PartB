@@ -46,11 +46,16 @@ class Player:
         elif self.phase == MOVING: 
             # Keep randomly choosing a piece until one has available moves
             # then randomly select one of those moves
+            
+            exclude_borders = 0
+            
             while True:
                 if self.board.count_outside(self.colour) >= (SHRINK[0] - self.turns)/2 and self.turns < SHRINK[0]:
                     team = list(self.board.get_border_pieces(self.colour).values())
+                    exclude_borders = 1
                 elif self.board.count_outside(self.colour) >= (SHRINK[1] - self.turns)/2 and self.turns < SHRINK[1]:
                     team = list(self.board.get_border_pieces(self.colour).values())
+                    exclude_borders = 1
                 else:
                     team = list(self.board.get_alive(self.colour).values())
                 
@@ -59,8 +64,11 @@ class Player:
                     break
                 
                 # Choose random piece and a random move
-                piece = random.choice(team)
-                moves = piece.listmoves()
+                while True:
+                    piece = random.choice(team)
+                    moves = piece.listmoves(exclude_borders)
+                    if len(moves) > 0:
+                        break
                 
                 # Check piece has moves available, then make move
                 if moves:
