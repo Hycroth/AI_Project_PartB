@@ -129,7 +129,7 @@ class Player:
         # Compare number of our pieces to number of enemy pieces
         # Give more value to our pieces (defensive strategy)
         value += len(board.get_alive(self.colour)) * 20.0
-        value += len(board.get_alive(self.enemy)) * -10.0
+        value += len(board.get_alive(self.enemy)) * -15.0
         
         # How good is our positioning (closer to middle 4 squares is favoured)
         for piece in board.get_alive(self.colour).values():
@@ -140,7 +140,7 @@ class Player:
             distance = min(dfm)
             # Penalise board state more the further our pieces are from 
             # middle 4 squares
-            value += distance * -1.0
+            value += distance * -0.5
             
         return value
     
@@ -201,7 +201,7 @@ class Player:
     # The following two functions are for Alpha-beta pruning
     def max_value(self, board, player, depth, a, b):
         # Cutoff test
-        if self.board.check_win(self.colour) != CONTINUE or depth == 0:
+        if (self.turns + (SEARCH_DEPTH-depth)) >= MOVING_PHASE or depth == 0:
             return self.evaluate_board(board)
         
         values = []
