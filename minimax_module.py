@@ -12,7 +12,8 @@ WHITE, BLACK = ['O', '@']
 PLACING, MOVING = ['placing', 'moving']
 WIN, TIE, LOSS, CONTINUE = [3,2,1,0]
 MIDDLE_SQUARES = [(3,3), (4,3), (3,4), (4,4)]
-SEARCH_DEPTH = 2
+PLACE_DEPTH = 2
+MOVE_DEPTH = 0
 
 # HELPER FUNCTION
 def manhattan_distance(a, b):
@@ -41,45 +42,42 @@ class Player:
         next_action = None  # default value if no moves available
         self.turns = turns # allow us to know when to shrink in update function
         
-        # Check if board has shrunk
+        # Time to shrink the board
         if turns in SHRINK:
             self.board.shrink()
             
         # Placing phase
         if self.phase == PLACING:
             
-            # Using minimax
-            #next_action = self.minimax_decision()
-            #self.board.place_piece(self.colour, next_action)
+            # Choose square to place next piece on
+            next_action = self.alpha_beta_place()
             
-            # Using minimax with alpha-beta pruning
-            next_action = self.alpha_beta_search()
+            # Place piece on our representation of the game board
             self.board.place_piece(self.colour, next_action)
         
         # Moving phase
         elif self.phase == MOVING: 
+            
+            # Choose piece (oldpos) and square to move it to (newpos)
             next_action = self.alpha_beta_move()
             oldpos, newpos = next_action
+            
+            # Move piece on our representation of the game board
             self.board.get_piece(oldpos).make_move(newpos)
-        
+            
         # Check if this was our last turn in placing phase
         if (turns == MOVING_PHASE-2 or turns == MOVING_PHASE-1) and \
         self.phase == PLACING:
             self.phase = MOVING
         
-        # Output testing
-        print("====================\n" + self.colour + "'s board")
-        self.board.print_grid()
-        #print("White:" + str(self.board.get_alive('O').keys()))
-        #print("Black:" + str(self.board.get_alive('@').keys()))
-        #print("Value of board = " + str(self.evaluate_board(self.board)))
-        #print("====================\nReferee's board")
-        
+        # Increment our turn count for update function
         self.turns += 1
+        
         return next_action
     
     # Update game board with opponents move
     def update(self, action):
+        
         # Check if board has shrunk
         if self.turns in SHRINK:
             self.board.shrink()
@@ -99,7 +97,7 @@ class Player:
     def evaluate_board(self, board):
         value = 0.0
         
-        # First check win conditions if we are in moving phase
+        # First check for end game conditions
         if self.phase == MOVING:
             result = board.check_win(self.colour)
             if result == WIN:
@@ -122,52 +120,15 @@ class Player:
             for square in MIDDLE_SQUARES:
                 dfm.append(manhattan_distance(piece.pos, square))
             distance = min(dfm)
-            # Penalise board state more the further our pieces are from 
-            # middle 4 squares
+            
+            # Lower the value the more further our pieces are from the centre
             value += distance * -1.0
             
         return value
-    
-    # Only for placing phase for now, gets the move with highest minimax value
-    def minimax_decision(self):
-        values = {} # Key - move, Value - Minimax value
-        
-        # Iterate through all possible placing moves for current board state
-        for pos in self.board.starting_zone(self.colour):
-            # Check square isn't already taken
-            if self.board.get_piece(pos) == None:
-                # Find minimax value of move up to 2 ply
-                eliminated = self.board.place_piece(self.colour, pos)
-                values[pos] = self.minimax_value(self.board, self.colour, 2)
-                self.board.undo_place(self.colour, pos, eliminated)
-        
-        return max(values, key=values.get)
-    
-    # Returns minimax value given that it is 'player's turn
-    def minimax_value(self, board, player, depth):
-        # Terminal test or we've hit search depth
-        if self.board.check_win(self.colour) != CONTINUE or depth == 0:
-            return self.evaluate_board(board)
-        
-        # Lists our successor board states depending on whose turn it is
-        values = []
-        for pos in self.board.starting_zone(player):
-            if self.board.get_piece(pos) == None:
-                eliminated = self.board.place_piece(player, pos)
-                values.append(self.minimax_value(board, player, depth-1))
-                self.board.undo_place(player, pos, eliminated)
-                
-        # MAX's (our AI) turn
-        if player == self.colour:
-            return max(values)
-        
-        # MIN's (opponent) turn
-        elif player == self.enemy:
-            return min(values)
             
-    # Minimax but with alpha-beta pruning (for placing phase)
-    def alpha_beta_search(self):
-        values = {} # Key - move, Value - Minimax value
+    # Minimax with alpha-beta pruning (for placing phase)
+    def alpha_beta_place(self):
+        values = {} # dictionary of placing moves and their minimax value
         
         # Iterate through all possible placing moves for current board state
         for pos in self.board.starting_zone(self.colour):
@@ -175,93 +136,109 @@ class Player:
             if self.board.get_piece(pos) == None:
                 # Find minimax value
                 eliminated = self.board.place_piece(self.colour, pos)
-                values[pos] = self.max_value(self.board, self.colour, 
-                                             SEARCH_DEPTH, -math.inf, math.inf)
+                values[pos] = self.max_place(self.board, self.colour, 
+                                             PLACE_DEPTH, -math.inf, math.inf)
                 self.board.undo_place(self.colour, pos, eliminated)
         
+        # Return placing move with highest minimax value
         return max(values, key=values.get)
     
-    # The following two functions are for Alpha-beta pruning
-    def max_value(self, board, player, depth, a, b):
-        # Cutoff test
-        if (self.turns + (SEARCH_DEPTH-depth)) >= MOVING_PHASE or depth == 0:
+    # Returns highest minimax value for our player's turn (MAX)
+    def max_place(self, board, player, depth, a, b):
+        values = []
+        
+        # Cutoff test: either we've reached end of placing phase or depth limit
+        if (self.turns + (PLACE_DEPTH-depth)) >= MOVING_PHASE or depth == 0:
             return self.evaluate_board(board)
         
-        values = []
+        # Find minimax value of each possible placing move
         for pos in self.board.starting_zone(player):
             if board.get_piece(pos) == None:
                 eliminated = board.place_piece(player, pos)
-                a = max(a, self.min_value(board, player, depth-1, a, b))
+                a = max(a, self.min_place(board, player, depth-1, a, b))
                 board.undo_place(player, pos, eliminated)
+                
+                # Alpha-beta pruning
                 if a >= b:
                     return b
                 
         return a
     
-    # The following two functions are for Alpha-beta pruning
-    def min_value(self, board, player, depth, a, b):
-        # Cutoff test
-        if (self.turns + (SEARCH_DEPTH-depth)) >= MOVING_PHASE or depth == 0:
-            return self.evaluate_board(board)
-        
+    # Returns lowest minimax value for opponents turn (MIN)
+    def min_place(self, board, player, depth, a, b):
         values = []
+        
+        # Cutoff test (same as above)
+        if (self.turns + (PLACE_DEPTH-depth)) >= MOVING_PHASE or depth == 0:
+            return self.evaluate_board(board)
+    
+        # Find minimax value of each possible placing move
         for pos in self.board.starting_zone(player):
             if board.get_piece(pos) == None:
                 eliminated = board.place_piece(player, pos)
-                b = min(b, self.max_value(board, player, depth-1, a, b))
+                b = min(b, self.max_place(board, player, depth-1, a, b))
                 board.undo_place(player, pos, eliminated)
+                
+                # Alpha-beta pruning
                 if b <= a:
                     return a
                 
         return b
-    
-    # Minimax but with alpha-beta pruning (for moving phase)
+
+    # Minimax with alpha-beta pruning (for moving phase)
     def alpha_beta_move(self):
-        values = {} # Key - move, Value - Minimax value
+        values = {} # dictionary of moves and corresponding minimax values
         
-        # Iterate through each of our pieces
+        # Iterate through possible moves for each of our pieces
         for piece in self.board.get_alive(self.colour).values():
-            # Iterate through each move for piece
             for move in piece.listmoves():
                 oldpos = piece.pos
                 eliminated = piece.make_move(move)
-                values[oldpos, move] = self.max_value_move(self.board, self.colour,
-                                                   0, -math.inf, math.inf)
+                values[oldpos, move] = self.max_move(self.board, self.colour,
+                                                   MOVE_DEPTH, -math.inf, math.inf)
                 piece.undo_move(oldpos, eliminated) 
         
         return max(values, key=values.get)
     
-    # The following two functions are for Alpha-beta pruning
-    def max_value_move(self, board, player, depth, a, b):
-        # Cutoff test
+    # Returns highest minimax value for our player's turn (MAX)
+    def max_move(self, board, player, depth, a, b):
+        values = []
+        
+        # Cutoff test: reached end game condition or depth limit
         if self.board.check_win(self.colour) != CONTINUE or depth == 0:
             return self.evaluate_board(board)
         
-        values = []
+        # Iterate through each move for each of MAX's pieces
         for piece in board.get_alive(player).values():
             for move in piece.listmoves():
                 oldpos = piece.pos
                 eliminated = piece.make_move(move)
-                a = max(a, self.min_value_move(board, player, depth-1, a, b))
+                a = max(a, self.min_move(board, player, depth-1, a, b))
                 piece.undo_move(oldpos, eliminated)
+                
+                # Alpha-beta pruning
                 if a >= b:
                     return b
                 
         return a
     
-    # The following two functions are for Alpha-beta pruning
-    def min_value_move(self, board, player, depth, a, b):
-        # Cutoff test
+    # Returns lowest minimax value for opponents turn (MIN)
+    def min_move(self, board, player, depth, a, b):
+        values = []
+        
+        # Cutoff test (same as above)
         if self.board.check_win(self.colour) != CONTINUE or depth == 0:
             return self.evaluate_board(board)
         
-        values = []
+        # Iterate through each move for each of MIN's pieces
         for piece in board.get_alive(player).values():
             for move in piece.listmoves():
                 oldpos = piece.pos
                 eliminated = piece.make_move(move)
-                b = min(b, self.max_value_move(board, player, depth-1, a, b))
+                b = min(b, self.max_move(board, player, depth-1, a, b))
                 piece.undo_move(oldpos, eliminated)
+                
+                # Alpha-beta pruning
                 if b <= a:
                     return a
                 
