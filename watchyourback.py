@@ -331,5 +331,17 @@ class Piece:
         self.pos = oldpos
         self.board.grid[newpos] = EMPTY
         self.board.grid[oldpos] = self.player
-        self.board.update_team(self.player, oldpos, newpos)
+        
+        if self.player == WHITE:
+            dictionary = self.board.white_pieces
+        else:
+            dictionary = self.board.black_pieces
+        
+        # If piece has not been overridden in its team dictionary, update it
+        if self.pos in dictionary:
+            self.board.update_team(self.player, oldpos, newpos)
+        
+        # Overridden during alpha beta search so insert into dictionary again   
+        else:
+            dictionary[oldpos] = self
                  
