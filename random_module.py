@@ -1,7 +1,14 @@
-# Player module for COMP30024: Artificial Intelligence, 2018
-# Authors: Ckyever Gaviola, Samuel Fatone
-# Strategy: Place pieces and move pieces at random
+"""
+Class representing a player for a game of Watch Your Back! using referee.py
 
+Most basic AI, playing moves at random. Used for testing purposes and to
+improve evaluation function and searching algorithms.
+
+Served as a template for minimax_module
+
+Authors: Ckyever Gaviola, Samuel Fatone
+May 2018
+"""
 from watchyourback import Board, Piece
 import random
 

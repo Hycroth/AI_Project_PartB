@@ -1,35 +1,44 @@
-# Piece module for COMP30024: Artificial Intelligence, 2018
-# Authors: Ckyever Gaviola, Samuel Fatone
-# Note: Some ideas have been borrowed from the sample-solution
+"""
+Classes representing the game board used in Watch Your Back! and the pieces 
+moving around it
 
-# TODO: Fix shrink function - it shrinks the board too small second time around
-# After a move piece's position doesn't get updated in enemy_pieces dictionary but it gets moved on board.grid with the opposite colour
+Created to simulate all valid events that occur during a game of Watch Your 
+Back! and also additional informative functions to assist with Player's search 
+strategy. It also allows moves to be reversed to aid the Player class.
 
+Authors: Ckyever Gaviola, Samuel Fatone
+May 2018
+"""
 # CONSTANTS
 WHITE, BLACK, CORNER, EMPTY = ['O','@','X','-']
 DIRECTIONS = UP, DOWN, LEFT, RIGHT = (0, -1), (0, 1), (-1, 0), (1, 0)
-WHITE_ZONE, BLACK_ZONE = range(6), range(2, 8)  # Assuming size of board is default (8)
+WHITE_ZONE, BLACK_ZONE = range(6), range(2, 8)
 WIN, TIE, LOSS, CONTINUE = [3,2,1,0]
 
 # HELPER FUNCTIONS
-
-# Takes position (x,y) and applies direction (from DIRECTIONS) and returns
-# the resulting tuple
 def step(position, direction):
+    """
+    Takes position (x,y) and applies direction (from DIRECTIONS) and returns
+    the resulting tuple
+    """
     px, py = position
     dx, dy = direction
     return (px+dx, py+dy)
 
 # CLASSES
-
 class Board:
-    # Class representing board as a dictionary ('grid' = {(x,y): '-', ...}) &
-    # keeping track of pieces (instance of Piece) with a similar dictionary
-    # ('white_pieces' = {(x,y): piece, ...})
+    """
+    A class that represents the game board in Watch Your Back! containing
+    functions which give info about certain pieces, shrink the board, and
+    place pieces.
+    """
     def __init__(self, size):
-        # Initialise blank board with dimensions size x size then insert 
-        # corners after. Also initialise list 'playingarea' holding all tuples
-        # included in the active zone (allows us to shrink board easier)
+        """
+        Initialise blank board with dimensions size x size then insert 
+        corners after. Also initialise list 'playingarea' holding all tuples
+        included in the active zone (allows us to shrink board easier) and
+        dictionary of each players pieces
+        """
         self.grid = {}
         self.size = size
         self.playingarea = []
@@ -47,8 +56,10 @@ class Board:
         self.black_pieces = {}
         
     def starting_zone(self, colour):
-        # Returns a list which represents all tuples in selected teams zone
-        # during the placing phase
+        """
+        Returns a list which represents all tuples in selected teams zone
+        during the placing phase
+        """
         zone = []
         
         for x, y in self.playingarea:
@@ -63,7 +74,9 @@ class Board:
         return zone
     
     def get_piece(self, pos):
-        # Returns an alive piece at the given position, if no piece return None
+        """
+        Returns an alive piece at the given position. If no piece, return None
+        """
         piece = None
         
         # Is piece white?
@@ -77,7 +90,9 @@ class Board:
         return piece
     
     def get_alive(self, colour):
-        # Return dictionary containing pieces that are currently alive
+        """
+        Return dictionary containing pieces that are currently alive
+        """
         dictionary = {}
         
         if colour == WHITE:
@@ -92,7 +107,10 @@ class Board:
         return dictionary
     
     def get_border_pieces(self, colour):
-        # Return dictionary containing pieces that are currently alive
+        """
+        Gets pieces that are currently on the border if a shrink were to occur
+        now
+        """
         dictionary = {}
         
         s = self.numOfShrinks
@@ -102,21 +120,29 @@ class Board:
                 if piece.alive == True:
                     if key[0]==s or key[0]==7-s or key[1]==s or key[1]==7-s:
                         dictionary[key] = piece
-                    elif (key[0]==s+1 and key[1]==s+1) or (key[0]==s+1 and key[1]==6-s) or (key[0]==6-s and key[1]==s+1) or (key[0]==6-s and key[1]==6-s):
+                    elif (key[0]==s+1 and key[1]==s+1) or \
+                    (key[0]==s+1 and key[1]==6-s) or \
+                    (key[0]==6-s and key[1]==s+1) or \
+                    (key[0]==6-s and key[1]==6-s):
                         dictionary[key] = piece
         else:
             for key, piece in self.black_pieces.items():
                 if piece.alive == True:
                     if key[0]==s or key[0]==7-s or key[1]==s or key[1]==7-s:
                         dictionary[key] = piece
-                    elif (key[0]==s+1 and key[1]==s+1) or (key[0]==s+1 and key[1]==6-s) or (key[0]==6-s and key[1]==s+1) or (key[0]==6-s and key[1]==6-s):
+                    elif (key[0]==s+1 and key[1]==s+1) or \
+                    (key[0]==s+1 and key[1]==6-s) or \
+                    (key[0]==6-s and key[1]==s+1) or \
+                    (key[0]==6-s and key[1]==6-s):
                         dictionary[key] = piece
                     
         return dictionary
         
     def place_piece(self, colour, pos):
-        # Returns eliminated pieces (can be empty) if piece placed 
-        # successfully (to be used for undo_place), else return None
+        """
+        Returns eliminated pieces (can be empty) if piece placed 
+        successfully (to be used for undo_place), else return None
+        """
         eliminated_pieces = []
         
         if pos in self.playingarea:
@@ -136,7 +162,9 @@ class Board:
         return None
     
     def undo_place(self, colour, pos, eliminated):
-        # Undo the most recent placing move by specified player
+        """
+        Undo the most recent placing move by specified player
+        """
         for piece in eliminated:
             piece.resurrect()
             
@@ -149,12 +177,16 @@ class Board:
                 del self.black_pieces[pos]
     
     def remove_piece(self, pos):
-        # Remove piece from grid
+        """
+        Remove pieces character from the grid
+        """
         if pos in self.grid:
             self.grid[pos] = EMPTY
         
     def update_team(self, colour, newpos, oldpos):
-        # Updates the key value of a piece in its respective dictionary
+        """
+        Updates the key value of a piece in its respective team dictionary
+        """
         if colour == WHITE:
             dictionary = self.white_pieces
         else:
@@ -164,21 +196,30 @@ class Board:
         del dictionary[oldpos]
        
     def count_outside(self, colour):
+        """
+        Counts the number of pieces that would be eliminated if a shrink were
+        to occur now
+        """
         count = 0
         
         s = self.numOfShrinks
         for i in range(s, 8-s):
             for j in range(s, 8-s):
-                if ((i==s or i==7-s or j==s or j==7-s) and self.grid[i, j] == colour):
+                if ((i==s or i==7-s or j==s or j==7-s) and \
+                    self.grid[i, j] == colour):
                     count += 1
-                elif ((i==s+1 and j==s+1) or (i==s+1 and j==6-s) or (i==6-s and j==s+1) or (i==6-s and j==6-s)) and self.grid[i, j] == colour:
+                elif ((i==s+1 and j==s+1) or (i==s+1 and j==6-s) or \
+                      (i==6-s and j==s+1) or \
+                      (i==6-s and j==6-s)) and self.grid[i, j] == colour:
                     count += 1
         
         return count
     
     def shrink(self):
-        # Shrink the play area and make any required eliminations
-        # Can only be called twice
+        """
+        Shrink the play area and make any required eliminations.
+        Can only be called twice.
+        """
         s = self.numOfShrinks
         
         # Iterate through outside borders
@@ -225,8 +266,10 @@ class Board:
         self.playingsize -= 2   
     
     def check_win(self, colour):
-        # Returns the constant indicating the current result of the board
-        # for the specified team
+        """
+        Returns the constant indicating the current result of the board
+        for the specified team
+        """
         white = 0
         black = 0
         
@@ -255,15 +298,19 @@ class Board:
             return CONTINUE
     
     def print_grid(self):
-        # Testing purposes only. 
-        # Prints out physical representation of game board 
+        """
+        Testing purposes only. 
+        Prints out physical representation of game board 
+        """
         size = range(self.size)
         print('\n'.join(' '.join(self.grid[x,y] for x in size) for y in size))
             
 class Piece:
-    # Class representing each piece in terms of player (WHITE/BLACK), 
-    # pos (x,y), board (instance of Board it belongs to), alive (whether
-    # or not it is on the board) and its enemies (WHITE/BLACK)
+    """
+    Class representing each piece in terms of player (WHITE/BLACK), 
+    pos (x,y), board (instance of Board it belongs to), alive (whether
+    or not it is on the board) and its enemies (WHITE/BLACK)
+    """
     def __init__(self, player, pos, board):
         self.player = player
         self.pos = pos
@@ -275,8 +322,10 @@ class Piece:
             self.enemy = [WHITE, CORNER]
         
     def listmoves(self, exclude_borders):
-        # Return all available moves as a list
-        
+        """
+        Returns all moves available for this piece. If exclude_borders is true
+        only returns moves within the shrink borders
+        """
         s = self.board.numOfShrinks
         backup_square = [0,0]
         
@@ -286,7 +335,10 @@ class Piece:
             adjacent_square = step(self.pos, dir)
             if adjacent_square in self.board.playingarea:
                 if self.board.grid[adjacent_square] == EMPTY:
-                    if exclude_borders == 1 and (adjacent_square[0]==s or adjacent_square[0]==7-s or adjacent_square[1]==s or adjacent_square[1]==7-s):
+                    if exclude_borders == 1 and (adjacent_square[0]==s or \
+                                                 adjacent_square[0]==7-s or \
+                                                 adjacent_square[1]==s or \
+                                                 adjacent_square[1]==7-s):
                         backup_square = adjacent_square
                         continue
                     else:
@@ -297,7 +349,10 @@ class Piece:
             jump_square = step(adjacent_square, dir)
             if jump_square in self.board.playingarea:
                 if self.board.grid[jump_square] == EMPTY:
-                    if exclude_borders == 1 and (jump_square[0]==s or jump_square[0]==7-s or jump_square[1]==s or jump_square[1]==7-s):
+                    if exclude_borders == 1 and (jump_square[0]==s or \
+                                                 jump_square[0]==7-s or \
+                                                 jump_square[1]==s or \
+                                                 jump_square[1]==7-s):
                         backup_square = jump_square
                         continue
                     else:
@@ -309,8 +364,10 @@ class Piece:
         return moves
     
     def check_eliminated(self):
-        # Returns true if eliminated and removes piece from 'grid' 
-        # and sets alive = False
+        """
+        Returns true if current piece has been eliminated, removes piece 
+        from 'grid' and sets alive = False
+        """
         
         # Check if piece is outside of playing area
         if self.pos not in self.board.playingarea:
@@ -331,13 +388,17 @@ class Piece:
                     return True
                     
     def resurrect(self):
-        # Places piece back on board and sets alive = True
+        """
+        Places piece back on the board and sets alive = True
+        """
         self.board.grid[self.pos] = self.player
         self.alive = True
         
     def eliminate_surrounding(self):
-        # Checks if any adjacent pieces need to be eliminated and return them
-        # in a list. Only use after moving or placing a piece
+        """
+        Checks if any adjacent pieces need to be eliminated and return them
+        in a list. Only use after moving or placing a piece
+        """
         eliminated_pieces = []
         
         if self.player == WHITE:
@@ -360,9 +421,11 @@ class Piece:
         return eliminated_pieces
                     
     def make_move(self, newpos):
-        # Moves piece to new position and check for eliminations.
-        # Returns eliminated pieces as a list to enable undomove()
-        # Assumes given position is valid
+        """
+        Moves piece to new position and check for eliminations.
+        Returns eliminated pieces as a list to enable undomove()
+        Assumes given position is valid
+        """
         oldpos = self.pos
         self.pos = newpos   
         self.board.grid[oldpos] = EMPTY
@@ -374,7 +437,9 @@ class Piece:
         return eliminated_pieces
         
     def undo_move(self, oldpos, eliminated):
-        # Move piece back to 'oldpos' and resurrect 'eliminated' pieces
+        """
+        Move piece back to 'oldpos' and resurrect 'eliminated' pieces
+        """
         for piece in eliminated:
             piece.resurrect()
             
