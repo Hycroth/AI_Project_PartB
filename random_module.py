@@ -56,7 +56,7 @@ class Player:
                 
                 # Choose random piece and a random move
                 piece = random.choice(team)
-                moves = piece.listmoves()
+                moves = piece.listmoves(0)
                 
                 # Check piece has moves available, then make move
                 if moves:

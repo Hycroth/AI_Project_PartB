@@ -55,14 +55,48 @@ class Player:
             self.board.place_piece(self.colour, next_action)
         
         # Moving phase
-        elif self.phase == MOVING: 
+        elif self.phase == MOVING:            
+            # Variable which will determine whether moves to a border piece will be allowed 
+            exclude_borders = 0
             
-            # Choose piece (oldpos) and square to move it to (newpos)
-            next_action = self.alpha_beta_move()
-            oldpos, newpos = next_action
+            while True:
+                
+                # If the number of turns for the colour is less than or equal to the number of pieces on the border,
+                # will move them first
+                if self.board.count_outside(self.colour) >= (SHRINK[0] - self.turns)/2 and self.turns < SHRINK[0]:
+                    team = list(self.board.get_border_pieces(self.colour).values())
+                    exclude_borders = 1
+                elif self.board.count_outside(self.colour) >= (SHRINK[1] - self.turns)/2 and self.turns < SHRINK[1]:
+                    team = list(self.board.get_border_pieces(self.colour).values())
+                    exclude_borders = 1
+                    
+                #If not use default move strategy
+                else:
+                    # Choose piece (oldpos) and square to move it to (newpos)
+                    next_action = self.alpha_beta_move()
+                    oldpos, newpos = next_action
             
-            # Move piece on our representation of the game board
-            self.board.get_piece(oldpos).make_move(newpos)
+                    # Move piece on our representation of the game board
+                    self.board.get_piece(oldpos).make_move(newpos)
+                    break
+                
+                # In the case board shrink eliminates all of our team
+                if not team:
+                    break
+                
+                # Choose random piece and a random move
+                while True:
+                    piece = random.choice(team)
+                    moves = piece.listmoves(exclude_borders)
+                    if len(moves) > 0:
+                        break
+                
+                # Check piece has moves available, then make move
+                if moves:
+                    newpos = random.choice(moves)
+                    next_action = (piece.pos, newpos)
+                    piece.make_move(newpos)
+                    break
             
         # Check if this was our last turn in placing phase
         if (turns == MOVING_PHASE-2 or turns == MOVING_PHASE-1) and \
@@ -189,7 +223,7 @@ class Player:
         
         # Iterate through possible moves for each of our pieces
         for piece in self.board.get_alive(self.colour).values():
-            for move in piece.listmoves():
+            for move in piece.listmoves(0):
                 oldpos = piece.pos
                 eliminated = piece.make_move(move)
                 values[oldpos, move] = self.max_move(MOVE_DEPTH, -math.inf, math.inf)
@@ -207,7 +241,7 @@ class Player:
         
         # Iterate through each move for each of MAX's pieces
         for piece in self.board.get_alive(self.colour).values():
-            for move in piece.listmoves():
+            for move in piece.listmoves(0):
                 oldpos = piece.pos
                 eliminated = piece.make_move(move)
                 a = max(a, self.min_move(depth-1, a, b))
@@ -229,7 +263,7 @@ class Player:
         
         # Iterate through each move for each of MIN's pieces
         for piece in self.board.get_alive(self.enemy).values():
-            for move in piece.listmoves():
+            for move in piece.listmoves(0):
                 oldpos = piece.pos
                 eliminated = piece.make_move(move)
                 b = min(b, self.max_move(depth-1, a, b))
