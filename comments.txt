@@ -30,6 +30,16 @@ move. The max and min functions would recursively call each other to simulate
 our player (MAX) taking a turn and then our opponent (MIN) taking a turn until
 passing the specified cutoff test (base case) where it would return the utility
 value of the board via the evaluation function.
+Another strategy we have implemented attempts to get all of the player pieces
+away from the border when it is near shrinking. To do this, we added functions
+to count the number of player pieces that are on the border, which in turn
+enables us to know at which move we should start moving them to a more central
+position. Using these functions should enable all of the player pieces to
+escape being killed by the border shrink.
+When deciding on a move, the border functions are examined first to decide
+whether the border pieces have to be moved to escape death. However, if the
+pieces do not have to be moved just yet, the minimax algorithm above is used
+instead.
 
 Evaluation function:
 The heuristic we've chosen here is the number of our pieces relative to the
