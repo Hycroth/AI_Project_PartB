@@ -1,5 +1,4 @@
-# Player module for COMP30024: Artificial Intelligence, 2018
-# Authors: Ckyever Gaviola, Samuel Fatone
+  
 # Strategy: Use evaluation function with minimax and alpha-beta pruning
 
 from watchyourback import Board, Piece
