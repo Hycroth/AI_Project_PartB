@@ -97,6 +97,7 @@ class Board:
         
         s = self.numOfShrinks
         
+        # Interates through the alive pieces and adds them to the dictionary only if they are on the border
         if colour == WHITE:
             for key, piece in self.white_pieces.items():
                 if piece.alive == True:
@@ -164,6 +165,7 @@ class Board:
         del dictionary[oldpos]
        
     def count_outside(self, colour):
+        # Counts the number of player pieces that are on the border 
         count = 0
         
         s = self.numOfShrinks
@@ -278,6 +280,8 @@ class Piece:
         # Return all available moves as a list
         
         s = self.board.numOfShrinks
+        
+        #Sets the backup square to be chosen as an impossible value, which will only be returned as a last resort and only if it changes
         backup_square = [0,0]
         
         moves = []
@@ -285,7 +289,11 @@ class Piece:
             # Try make a normal move
             adjacent_square = step(self.pos, dir)
             if adjacent_square in self.board.playingarea:
+                
+                # Adds the move to a list of potential moves
                 if self.board.grid[adjacent_square] == EMPTY:
+                    
+                    # If we don't want to move to a border square, sets it as a backup to be used if that is the only move available
                     if exclude_borders == 1 and (adjacent_square[0]==s or adjacent_square[0]==7-s or adjacent_square[1]==s or adjacent_square[1]==7-s):
                         backup_square = adjacent_square
                         continue
@@ -296,7 +304,11 @@ class Piece:
             # If not try jump to square next to adjacent square
             jump_square = step(adjacent_square, dir)
             if jump_square in self.board.playingarea:
+                
+                # Adds the move to a list of potential moves
                 if self.board.grid[jump_square] == EMPTY:
+                    
+                    # If we don't want to move to a border square, sets it as a backup to be used if that is the only move available
                     if exclude_borders == 1 and (jump_square[0]==s or jump_square[0]==7-s or jump_square[1]==s or jump_square[1]==7-s):
                         backup_square = jump_square
                         continue
@@ -304,6 +316,7 @@ class Piece:
                         moves.append(jump_square)
                         continue
                     
+        #Adds the backup square to the list if the list is empty
         if len(moves) == 0 and backup_square != [0,0]:
             moves.append(backup_square)
         return moves
