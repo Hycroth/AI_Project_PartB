@@ -89,7 +89,30 @@ class Board:
                 if piece.alive == True:
                     dictionary[key] = piece
                     
-        return dictionary   
+        return dictionary
+    
+    def get_border_pieces(self, colour):
+        # Return dictionary containing pieces that are currently alive
+        dictionary = {}
+        
+        s = self.numOfShrinks
+        
+        if colour == WHITE:
+            for key, piece in self.white_pieces.items():
+                if piece.alive == True:
+                    if key[0]==s or key[0]==7-s or key[1]==s or key[1]==7-s:
+                        dictionary[key] = piece
+                    elif (key[0]==s+1 and key[1]==s+1) or (key[0]==s+1 and key[1]==6-s) or (key[0]==6-s and key[1]==s+1) or (key[0]==6-s and key[1]==6-s):
+                        dictionary[key] = piece
+        else:
+            for key, piece in self.black_pieces.items():
+                if piece.alive == True:
+                    if key[0]==s or key[0]==7-s or key[1]==s or key[1]==7-s:
+                        dictionary[key] = piece
+                    elif (key[0]==s+1 and key[1]==s+1) or (key[0]==s+1 and key[1]==6-s) or (key[0]==6-s and key[1]==s+1) or (key[0]==6-s and key[1]==6-s):
+                        dictionary[key] = piece
+                    
+        return dictionary
         
     def place_piece(self, colour, pos):
         # Returns eliminated pieces (can be empty) if piece placed 
@@ -140,6 +163,19 @@ class Board:
         dictionary[newpos] = dictionary[oldpos]
         del dictionary[oldpos]
        
+    def count_outside(self, colour):
+        count = 0
+        
+        s = self.numOfShrinks
+        for i in range(s, 8-s):
+            for j in range(s, 8-s):
+                if ((i==s or i==7-s or j==s or j==7-s) and self.grid[i, j] == colour):
+                    count += 1
+                elif ((i==s+1 and j==s+1) or (i==s+1 and j==6-s) or (i==6-s and j==s+1) or (i==6-s and j==6-s)) and self.grid[i, j] == colour:
+                    count += 1
+        
+        return count
+    
     def shrink(self):
         # Shrink the play area and make any required eliminations
         # Can only be called twice
@@ -238,23 +274,38 @@ class Piece:
         else:
             self.enemy = [WHITE, CORNER]
         
-    def listmoves(self):
+    def listmoves(self, exclude_borders):
         # Return all available moves as a list
+        
+        s = self.board.numOfShrinks
+        backup_square = [0,0]
+        
         moves = []
         for dir in DIRECTIONS:
             # Try make a normal move
             adjacent_square = step(self.pos, dir)
             if adjacent_square in self.board.playingarea:
                 if self.board.grid[adjacent_square] == EMPTY:
-                    moves.append(adjacent_square)
-                    continue # Since jump is not possible
+                    if exclude_borders == 1 and (adjacent_square[0]==s or adjacent_square[0]==7-s or adjacent_square[1]==s or adjacent_square[1]==7-s):
+                        backup_square = adjacent_square
+                        continue
+                    else:
+                        moves.append(adjacent_square)
+                        continue # Since jump is not possible
                 
             # If not try jump to square next to adjacent square
             jump_square = step(adjacent_square, dir)
             if jump_square in self.board.playingarea:
                 if self.board.grid[jump_square] == EMPTY:
-                    moves.append(jump_square)
+                    if exclude_borders == 1 and (jump_square[0]==s or jump_square[0]==7-s or jump_square[1]==s or jump_square[1]==7-s):
+                        backup_square = jump_square
+                        continue
+                    else:
+                        moves.append(jump_square)
+                        continue
                     
+        if len(moves) == 0 and backup_square != [0,0]:
+            moves.append(backup_square)
         return moves
     
     def check_eliminated(self):
