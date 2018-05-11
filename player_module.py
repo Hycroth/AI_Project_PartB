@@ -47,15 +47,21 @@ class Player:
             # Keep randomly choosing a piece until one has available moves
             # then randomly select one of those moves
             
+            # Variable which will determine whether moves to a border piece will be allowed 
             exclude_borders = 0
             
             while True:
+                
+                # If the number of turns for the colour is less than or equal to the number of pieces on the border,
+                # will move them first
                 if self.board.count_outside(self.colour) >= (SHRINK[0] - self.turns)/2 and self.turns < SHRINK[0]:
                     team = list(self.board.get_border_pieces(self.colour).values())
                     exclude_borders = 1
                 elif self.board.count_outside(self.colour) >= (SHRINK[1] - self.turns)/2 and self.turns < SHRINK[1]:
                     team = list(self.board.get_border_pieces(self.colour).values())
                     exclude_borders = 1
+                    
+                #If not, can select from any of the pieces
                 else:
                     team = list(self.board.get_alive(self.colour).values())
                 
